@@ -4,7 +4,7 @@ import csv
 import os
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional
 from pathlib import Path
 
@@ -21,7 +21,14 @@ class QuestionConfig:
     height_strs_cte: List[str]
     height_strs_ela: List[str]
     grid_names: List[str]  # 添加网格名称配置
-    
+    duty_names: dict = field(default_factory=lambda: {
+            'CTE': '热膨胀系数',
+            'ela': '拉伸模量',
+            'Ther': '热应变',
+            'stress': '对角线方向应力',
+            'strain': '对角线方向应变'
+        })
+
     @property
     def cte_title(self) -> str:
         return f'Q{self.question_id}CTE热膨胀系数在不同高度上以及角点处竖直线路上的变化'
@@ -96,11 +103,12 @@ class ConfigManager:
         return QuestionConfig(
             question_id=2,
             output_folder=os.path.join(base_path, 'Q2'),
-            fontsize=4,
+            fontsize=5,
             yscale=(-200000, 300000),
             name_converter={
-                'Q2v0-4': '芯片4mm精度分割',
-                'Q2v0-3.5': '芯片3.5mm精度分割'
+                'Q2-3': '芯片4mm精度分割',
+                'Q2-2.5': '芯片3.5mm精度分割',
+                'Q2-2': '芯片3mm精度分割'
             },
             path_names=[
                 '芯片3.57mm高度处对角线线路', 
@@ -140,7 +148,7 @@ class ConfigManager:
         return QuestionConfig(
             question_id=3,
             output_folder=os.path.join(base_path, 'Q3'),
-            fontsize=4,
+            fontsize=5,
             yscale=(-200000, 300000),
             name_converter={
                 'Q3-4': '芯片4mm精度分割',
@@ -256,50 +264,52 @@ class DataProcessor:
                 continue
             
             # Process CTE and elasticity data
-            cte_data = self.process_folder(folder_name, 'CTE')
-            ela_data = self.process_folder(folder_name, 'ela')
-            
-            if cte_data is None or ela_data is None:
-                continue
-            
+            dutys = ['CTE', 'ela', 'Ther', 'stress', 'strain']
+            results = {}
+            for duty in dutys:
+                results[duty] = self.process_folder(folder_name, duty)
+                if results[duty] is None:
+                    raise ValueError(f"Data for duty '{duty}' is None ")
+                
             # Write to Excel
             try:
                 if Path(output_file).exists():
                     with pd.ExcelWriter(output_file, engine='openpyxl', 
                                     mode='a', if_sheet_exists='replace') as writer:
-                        cte_data.to_excel(writer, sheet_name=f'CTE-{temp_str}摄氏度', index=False)
-                        ela_data.to_excel(writer, sheet_name=f'ela-{temp_str}摄氏度', index=False)
+                        for duty_name, result in results.items():
+                            result.to_excel(writer, sheet_name=f'{duty_name}-{temp_str}摄氏度', index=False)
                 else:
                     with pd.ExcelWriter(output_file, engine='openpyxl', 
                                     mode='w') as writer:
-                        cte_data.to_excel(writer, sheet_name=f'CTE-{temp_str}摄氏度', index=False)
-                        ela_data.to_excel(writer, sheet_name=f'ela-{temp_str}摄氏度', index=False)
+                        for duty_name, result in results.items():
+                            result.to_excel(writer, sheet_name=f'{duty_name}-{temp_str}摄氏度', index=False)
             except Exception as e:
                 print(f"Error writing Excel file: {e}")
     
     def get_total_dataframes(self, input_folder: str) -> Tuple[Dict, Dict]:
         """Get all dataframes organized by temperature"""
         input_path = Path(input_folder)
-        cte_list, ela_list = {}, {}
-        
-        for folder_name in input_path.iterdir():
-            if not folder_name.is_dir():
-                continue
-                
-            try:
-                temp_str = folder_name.name.split('-')[-1].split()[0][:4]
-            except (IndexError, ValueError):
-                continue
-            
-            cte_data = self.process_folder(folder_name, 'CTE')
-            ela_data = self.process_folder(folder_name, 'ela')
-            
-            if cte_data is not None:
-                cte_list[temp_str] = cte_data
-            if ela_data is not None:
-                ela_list[temp_str] = ela_data
-        
-        return cte_list, ela_list
+        result_list = {}
+
+        dutys = ['CTE', 'ela', 'Ther', 'stress', 'strain']
+        for duty in dutys:
+            result_data = {}
+            for folder_name in input_path.iterdir():
+                if not folder_name.is_dir():
+                    continue
+                    
+                try:
+                    temp_str = folder_name.name.split('-')[-1].split()[0][:4]
+                except (IndexError, ValueError):
+                    continue
+
+                result_data[temp_str] = self.process_folder(folder_name, duty)
+                if result_data[temp_str] is None:
+                    raise ValueError(f"duty {duty} can't find result")
+
+            result_list[duty] = result_data
+
+        return result_list
     
     @staticmethod
     def calculate_variance_string(data: pd.Series) -> str:
@@ -324,6 +334,9 @@ class Visualizer:
     
     def plot_stability_results(self, results: List[List], duty: str) -> None:
         """Plot stability test results"""
+        if duty not in ['CTE', 'ela']:
+            raise ValueError(f"{duty} not in ['CTE', 'ela'] ")
+        
         fig = plt.figure(dpi=800, figsize=(8, 6))
         ax = fig.subplots(1, 1)
         
@@ -340,19 +353,19 @@ class Visualizer:
         
         fig.suptitle(f'Q{self.config.question_id}网格细分程度稳定性检验', fontsize=12)
         
-        ylabel = '热膨胀系数' if duty == 'CTE' else '拉伸模量'
+        ylabel = self.config.duty_names[duty]
         fig.supylabel(ylabel, fontsize=12)
         fig.supxlabel('不同网格大小', fontsize=12)
         
-        output_path = Path(self.config.output_folder) / f'{duty}不同网格细化下的最终角点结果.jpg'
+        output_path = Path(self.config.output_folder) / f'{ylabel}不同网格细化下的最终角点结果.jpg'
         fig.savefig(output_path)
         plt.close(fig)
     
     def plot_multi_mesh_comparison(self, dir_names: List[str], duty: str, step: int,
                                  share_y: bool = False, scale: bool = False) -> None:
         """Plot comparison across different mesh sizes"""
-        share_y = True if duty == 'CTE' else False
-        scale = True if duty == 'ela' else False
+        if duty not in ['CTE', 'ela']:
+            raise ValueError(f"{duty} not in ['CTE', 'ela'] ")
 
         colors = cm.coolwarm(np.linspace(0, 1, len(dir_names)))
         
@@ -374,10 +387,7 @@ class Visualizer:
                 continue
             
             # Get data
-            if duty == 'CTE':
-                data_list, _ = processor.get_total_dataframes(dir_path)
-            else:
-                _, data_list = processor.get_total_dataframes(dir_path)
+            data_list = processor.get_total_dataframes(dir_path)[duty]
             
             if not data_list:
                 continue
@@ -469,8 +479,8 @@ class Visualizer:
     def plot_temperature_comparison(self, data_dict: Dict, duty: str, output_path: str,
                                    scale: bool = False, share_y: bool = False) -> None:
         """Plot temperature comparison for given data"""
-        share_y = True if duty == 'CTE' else False
-        scale = True if duty == 'ela' else False
+        if duty not in ['CTE', 'ela']:
+            raise ValueError(f"{duty} not in ['CTE', 'ela'] ")
 
         # Sort by temperature
         sorted_data = sorted([(float(temp), temp, data) for temp, data in data_dict.items()])
@@ -524,14 +534,10 @@ class Visualizer:
             fig.supylabel('拉伸模量', fontsize=12)
             fig.suptitle(self.config.ela_title, fontsize=12)
         
-        # Save with different variants
-        for suffix, use_scale, use_sharey in [('', False, False), 
-                                            ('-scale', True, False),
-                                            ('-sharey', False, True)]:
-            if (use_scale and not scale) or (use_sharey and not share_y):
-                continue
-            output_file = Path(output_path) / f'{duty}{suffix}.jpg'
-            fig.savefig(output_file)
+        suffix = '-shareY' if share_y else ''
+        suffix += '-scale' if scale else ''
+        output_file = Path(output_path) / f'{duty}{suffix}.jpg'
+        fig.savefig(output_file)
         
         plt.close(fig)
 
@@ -552,16 +558,12 @@ class EnhancedDataSorter:
             else:
                 raise ValueError(f"Unknown configuration parameter: {key}")
     
-    def process_directories(self, dir_names: List[str], duties: List[str] = None,
+    def process_directories(self, duty: str, dir_names: List[str],
                           share_y: bool = False, scale: bool = False, step: int = 0) -> None:
         """Process multiple directories and generate comparisons"""
-        if duties is None:
-            duties = ['CTE', 'ela']
-        
-        for duty in duties:
-            self.visualizer.plot_multi_mesh_comparison(
-                dir_names, duty, step, share_y, scale
-            )
+        self.visualizer.plot_multi_mesh_comparison(
+            dir_names, duty, step, share_y, scale
+        )
     
     def generate_excel_and_plots(self, dir_names: List[str]) -> None:
         """Generate Excel files and plots for specified directories"""
@@ -576,12 +578,12 @@ class EnhancedDataSorter:
             self.processor.to_excel(str(dir_path), str(output_xlsx))
             
             # Generate plots
-            cte_data, ela_data = self.processor.get_total_dataframes(str(dir_path))
+            cte_data, ela_data = [self.processor.get_total_dataframes(str(dir_path))[key] for key in ['CTE', 'ela']]
             
             if cte_data:
-                self.visualizer.plot_temperature_comparison(cte_data, 'CTE', str(dir_path))
+                self.visualizer.plot_temperature_comparison(cte_data, 'CTE', str(dir_path), share_y=True)
             if ela_data:
-                self.visualizer.plot_temperature_comparison(ela_data, 'ela', str(dir_path))
+                self.visualizer.plot_temperature_comparison(ela_data, 'ela', str(dir_path), scale=True)
 
 # Convenience functions for backward compatibility and easy usage
 def run_question_analysis(question: int, directories: List[str] = None, 
@@ -605,7 +607,7 @@ def analyze_q1(base_path: str = None):
 
 def analyze_q2(base_path: str = None):
     """Analyze Question 2"""
-    directories = ['Q2v0-0.07']
+    directories = ['Q2-2']
     return run_question_analysis(2, directories, base_path)
 
 def analyze_q3(base_path: str = None):
@@ -618,19 +620,19 @@ def run_mesh_convergence_study(question: int, dir_names: List[str]) -> None:
     sorter = EnhancedDataSorter(question)
     
     # Run with different visualization options
-    sorter.process_directories(dir_names, ['CTE'], share_y=True, step=0)
-    sorter.process_directories(dir_names, ['ela'], scale=True, step=0)
+    sorter.process_directories(dir_names, 'CTE', share_y=True, step=0)
+    sorter.process_directories(dir_names, 'ela', scale=True, step=0)
 
 # Main execution function
 def main():
     """Main execution function with examples"""
     
     # Example 1: Basic analysis for each question
-    print("Running Q1 analysis...")
-    q1_sorter = analyze_q1()
+    # print("Running Q1 analysis...")
+    # q1_sorter = analyze_q1()
     
-    # print("Running Q2 analysis...")
-    # q2_sorter = analyze_q2()
+    print("Running Q2 analysis...")
+    q2_sorter = analyze_q2()
     
     # print("Running Q3 analysis...")
     # q3_sorter = analyze_q3()

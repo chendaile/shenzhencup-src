@@ -54,8 +54,10 @@ class ConfigManager:
             fontsize=5,
             yscale=(-200000, 500000),
             name_converter={
-                'Q1v0-b2_1': 'BGA0.5mm分割',
-                'Q1v1-b3_2': 'BGA0.5mm分割'
+                'Q1-1': 'BGA1mm分割',
+                'Q1-2': 'BGA2mm分割',
+                'Q1-3': 'BGA3mm分割',
+                'Q1-2.5': 'BGA2.5mm分割'               
             },
             path_names=[
                 'BGA2mm高度处对角线线路', 
@@ -96,19 +98,7 @@ class ConfigManager:
             yscale=(-200000, 300000),
             name_converter={
                 'Q2v0-4': '芯片4mm精度分割',
-                'Q2v0-3.5': '芯片3.5mm精度分割',
-                'Q2v0-3': '芯片3mm精度分割',
-                'Q2v0-2.5': '芯片2.5mm精度分割',
-                'Q2v0-2': '芯片2mm精度分割',
-                'Q2v0-1': '芯片1mm精度分割',
-                'Q2v0-1.5': '芯片1.5mm精度分割',
-                'Q2v0-0.5': '芯片0.5mm精度分割',
-                'Q2v0-0.2': '芯片0.2mm精度分割',
-                'Q2v0-0.1': '芯片0.1mm精度分割',
-                'Q2v0-0.09': '芯片0.09mm精度分割',
-                'Q2v0-0.08': '芯片0.08mm精度分割',
-                'Q2v0-0.07': '芯片0.07mm精度分割',
-                'Q2v0-tmp': '芯片0.1mm精度分割'
+                'Q2v0-3.5': '芯片3.5mm精度分割'
             },
             path_names=[
                 '芯片3.57mm高度处对角线线路', 
@@ -267,11 +257,16 @@ class DataProcessor:
             
             # Write to Excel
             try:
-                mode = 'a' if Path(output_file).exists() else 'w'
-                with pd.ExcelWriter(output_file, engine='openpyxl', 
-                                  mode=mode, if_sheet_exists='replace') as writer:
-                    cte_data.to_excel(writer, sheet_name=f'CTE-{temp_str}摄氏度', index=False)
-                    ela_data.to_excel(writer, sheet_name=f'ela-{temp_str}摄氏度', index=False)
+                if Path(output_file).exists():
+                    with pd.ExcelWriter(output_file, engine='openpyxl', 
+                                    mode='a', if_sheet_exists='replace') as writer:
+                        cte_data.to_excel(writer, sheet_name=f'CTE-{temp_str}摄氏度', index=False)
+                        ela_data.to_excel(writer, sheet_name=f'ela-{temp_str}摄氏度', index=False)
+                else:
+                    with pd.ExcelWriter(output_file, engine='openpyxl', 
+                                    mode='w') as writer:
+                        cte_data.to_excel(writer, sheet_name=f'CTE-{temp_str}摄氏度', index=False)
+                        ela_data.to_excel(writer, sheet_name=f'ela-{temp_str}摄氏度', index=False)
             except Exception as e:
                 print(f"Error writing Excel file: {e}")
     
@@ -323,8 +318,7 @@ class Visualizer:
     def _get_grid_names(self) -> List[str]:
         """Get grid names based on question type"""
         grid_names = {
-            1: ['2.5mm网格', '2mm网格', '1.5mm网格', '1mm网格', 
-                '0.7mm网格', '0.5mm网格', '0.3mm网格', '0.2mm网格'],
+            1: ['3mm网格', '2.5mm网格'],
             2: ['4mm网格', '3.5mm网格', '3mm网格', '2.5mm网格', '2mm网格',
                 '1.5mm网格', '1mm网格', '0.5mm网格', '0.2mm网格', '0.1mm网格',
                 '0.09mm网格', '0.08mm网格', '0.07mm网格'],
@@ -362,6 +356,9 @@ class Visualizer:
     def plot_multi_mesh_comparison(self, dir_names: List[str], duty: str, step: int,
                                  share_y: bool = False, scale: bool = False) -> None:
         """Plot comparison across different mesh sizes"""
+        share_y = True if duty == 'CTE' else False
+        scale = True if duty == 'ela' else False
+
         colors = cm.coolwarm(np.linspace(0, 1, len(dir_names)))
         
         fig = plt.figure(dpi=800, figsize=(8, 6))
@@ -435,7 +432,7 @@ class Visualizer:
                         results[1].append(first_height_data.iloc[-1])
                 else:
                     if self.config.question_id == 1 and duty == 'ela':
-                        results[0].append(first_height_data.iloc[2])
+                        results[0].append(first_height_data.iloc[0])
                     else:
                         results[0].append(first_height_data.iloc[0])
         
@@ -525,6 +522,9 @@ class EnhancedDataSorter:
     def _plot_temperature_comparison(self, data_dict: Dict, duty: str, output_path: str,
                                    scale: bool = False, share_y: bool = False) -> None:
         """Plot temperature comparison for given data"""
+        share_y = True if duty == 'CTE' else False
+        scale = True if duty == 'ela' else False
+
         # Sort by temperature
         sorted_data = sorted([(float(temp), temp, data) for temp, data in data_dict.items()])
         
@@ -545,9 +545,13 @@ class EnhancedDataSorter:
                 if height_str not in output.columns:
                     continue
                 
-                line, = axes.flat[i].plot(output[height_str], 
-                                        label=f'Temp:{temp_str}℃', 
-                                        color=colors[j])
+                if i == 1:
+                    line, = axes.flat[i].plot(output[height_str], 
+                                            label=f'Temp:{temp_str}℃', 
+                                            color=colors[j])
+                else:
+                    line, = axes.flat[i].plot(output[height_str], 
+                                            color=colors[j])                    
                 axes.flat[i].set_title(self.config.path_names[i])
                 axes.flat[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
                 
@@ -601,7 +605,7 @@ def run_question_analysis(question: int, directories: List[str] = None,
 # Example usage functions
 def analyze_q1(base_path: str = None):
     """Analyze Question 1"""
-    directories = ['Q1-m0.2']
+    directories = ['Q1-3']
     return run_question_analysis(1, directories, base_path)
 
 def analyze_q2(base_path: str = None):
@@ -614,10 +618,9 @@ def analyze_q3(base_path: str = None):
     directories = ['Q3-0.2']
     return run_question_analysis(3, directories, base_path)
 
-def run_mesh_convergence_study(question: int, dir_names: List[str], 
-                              base_path: str = None) -> None:
+def run_mesh_convergence_study(question: int, dir_names: List[str]) -> None:
     """Run mesh convergence study for specified question and directories"""
-    sorter = EnhancedDataSorter(question, base_path)
+    sorter = EnhancedDataSorter(question)
     
     # Run with different visualization options
     sorter.process_directories(dir_names, ['CTE'], share_y=True, step=0)
@@ -628,46 +631,45 @@ def main():
     """Main execution function with examples"""
     
     # Example 1: Basic analysis for each question
-    print("Running Q1 analysis...")
-    q1_sorter = analyze_q1()
+    # print("Running Q1 analysis...")
+    # q1_sorter = analyze_q1()
     
-    print("Running Q2 analysis...")
-    q2_sorter = analyze_q2()
+    # print("Running Q2 analysis...")
+    # q2_sorter = analyze_q2()
     
-    print("Running Q3 analysis...")
-    q3_sorter = analyze_q3()
+    # print("Running Q3 analysis...")
+    # q3_sorter = analyze_q3()
     
-    # Example 2: Mesh convergence studies
-    print("Running mesh convergence studies...")
+    # # Example 2: Mesh convergence studies
+    # print("Running mesh convergence studies...")
     
     # Q1 mesh convergence
-    q1_dirs = ['Q1-m2.5', 'Q1-m2', 'Q1-m1.5', 'Q1-m1', 
-               'Q1-m0.7', 'Q1-m0.5', 'Q1-m0.3', 'Q1-m0.2']
+    q1_dirs = ['Q1-3', 'Q1-2.5']
     run_mesh_convergence_study(1, q1_dirs)
     
-    # Q2 mesh convergence
-    q2_dirs = ['Q2v0-4', 'Q2v0-3.5', 'Q2v0-3', 'Q2v0-2.5', 'Q2v0-2', 
-               'Q2v0-1.5', 'Q2v0-1', 'Q2v0-0.5', 'Q2v0-0.2', 'Q2v0-0.1', 
-               'Q2v0-0.09', 'Q2v0-0.08', 'Q2v0-0.07']
-    run_mesh_convergence_study(2, q2_dirs)
+    # # Q2 mesh convergence
+    # q2_dirs = ['Q2v0-4', 'Q2v0-3.5', 'Q2v0-3', 'Q2v0-2.5', 'Q2v0-2', 
+    #            'Q2v0-1.5', 'Q2v0-1', 'Q2v0-0.5', 'Q2v0-0.2', 'Q2v0-0.1', 
+    #            'Q2v0-0.09', 'Q2v0-0.08', 'Q2v0-0.07']
+    # run_mesh_convergence_study(2, q2_dirs)
     
-    # Q3 mesh convergence
-    q3_dirs = ['Q3-5', 'Q3-4', 'Q3-3', 'Q3-2', 'Q3-1', 
-               'Q3-0.5', 'Q3-0.4', 'Q3-0.3', 'Q3-0.2']
-    run_mesh_convergence_study(3, q3_dirs)
+    # # Q3 mesh convergence
+    # q3_dirs = ['Q3-5', 'Q3-4', 'Q3-3', 'Q3-2', 'Q3-1', 
+    #            'Q3-0.5', 'Q3-0.4', 'Q3-0.3', 'Q3-0.2']
+    # run_mesh_convergence_study(3, q3_dirs)
     
-    # Example 3: Custom configuration
-    print("Running custom analysis...")
-    custom_sorter = EnhancedDataSorter(1)
+    # # Example 3: Custom configuration
+    # print("Running custom analysis...")
+    # custom_sorter = EnhancedDataSorter(1)
     
-    # Update some parameters
-    custom_sorter.update_config(
-        fontsize=8,
-        yscale=(-100000, 400000)
-    )
+    # # Update some parameters
+    # custom_sorter.update_config(
+    #     fontsize=8,
+    #     yscale=(-100000, 400000)
+    # )
     
-    # Run custom analysis
-    custom_sorter.generate_excel_and_plots(['Q1-m0.3'])
+    # # Run custom analysis
+    # custom_sorter.generate_excel_and_plots(['Q1-m0.3'])
 
 if __name__ == "__main__":
     main()

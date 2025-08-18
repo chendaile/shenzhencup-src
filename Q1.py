@@ -1,6 +1,6 @@
 import os
 
-system_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output\\Q1\\Q1-m1.5\\"
+system_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output\\Q1\\Q1-0.5\\"
 def solve_heat(mag, heat_system_id = 9, inter_heat_id = 3,
                         solution_id = 4, tem_id=1):
     global heat_system, heat_solution, tem
@@ -70,18 +70,21 @@ def photo_tem(path=system_path):
 
 # photo_tem()
 
-def export_path(project_id, tem_flag, path_ids = list(range(7, 17)), save_path=system_path):
+def export_path(project_id, tem_flag, path_ids = list(range(10, 20))+[5,6,7], save_path=system_path):
     target_path = save_path + 'id-' + str(project_id) + '-' + str(tem_flag) + '\\'
     os.makedirs(target_path)
     for path_id in path_ids:
         path = static_solution.Children[path_id]
         path.ExportToTextFile(target_path + path.Name + '.csv')
+    
+    path = heat_solution.Children[2]
+    path.ExportToTextFile(target_path + path.Name + '.csv')
 
 # export_path(1, 30)
 
-def main(start=0, end=15):
+def main(start=0, end=10):
     for project_id in range(start, end+1):
-        mag = project_id * 1e-4 + 1e-5
+        mag = project_id * 1.5e-4 + 1e-5
         tem_flag = solve_heat(mag)
         solve_static()
         export_path(project_id, tem_flag)

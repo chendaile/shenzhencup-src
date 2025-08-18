@@ -20,6 +20,7 @@ class QuestionConfig:
     exchange_char: Dict[str, str]
     height_strs_cte: List[str]
     height_strs_ela: List[str]
+    grid_names: List[str]  # 添加网格名称配置
     
     @property
     def cte_title(self) -> str:
@@ -86,7 +87,8 @@ class ConfigManager:
                 'ela-Path-height-1mm', 
                 'ela-Path-height-0.5mm', 
                 'ela-Path-height-2mm_to_0mm'
-            ]
+            ],
+            grid_names=['3mm网格', '2.5mm网格']
         )
     
     @staticmethod
@@ -127,7 +129,10 @@ class ConfigManager:
                 'ela-Path-height-1.77mm', 
                 'ela-Path-height-0.87mm', 
                 'ela-Path-height-3.57mm_to_0mm'
-            ]
+            ],
+            grid_names=['4mm网格', '3.5mm网格', '3mm网格', '2.5mm网格', '2mm网格',
+                       '1.5mm网格', '1mm网格', '0.5mm网格', '0.2mm网格', '0.1mm网格',
+                       '0.09mm网格', '0.08mm网格', '0.07mm网格']
         )
     
     @staticmethod
@@ -177,7 +182,9 @@ class ConfigManager:
                 'ela-Path-height-1.3mm', 
                 'ela-Path-height-1.97mm_to_0mm_焊球端',
                 'ela-Path-height-1.97mm_to_0mm_无焊球端'
-            ]
+            ],
+            grid_names=['5mm网格', '4mm网格', '3mm网格', '2mm网格', '1mm网格',
+                       '0.5mm网格', '0.4mm网格', '0.3mm网格', '0.2mm网格']
         )
 
 class DataProcessor:
@@ -315,24 +322,12 @@ class Visualizer:
             'axes.unicode_minus': False
         })
     
-    def _get_grid_names(self) -> List[str]:
-        """Get grid names based on question type"""
-        grid_names = {
-            1: ['3mm网格', '2.5mm网格'],
-            2: ['4mm网格', '3.5mm网格', '3mm网格', '2.5mm网格', '2mm网格',
-                '1.5mm网格', '1mm网格', '0.5mm网格', '0.2mm网格', '0.1mm网格',
-                '0.09mm网格', '0.08mm网格', '0.07mm网格'],
-            3: ['5mm网格', '4mm网格', '3mm网格', '2mm网格', '1mm网格',
-                '0.5mm网格', '0.4mm网格', '0.3mm网格', '0.2mm网格']
-        }
-        return grid_names.get(self.config.question_id, [])
-    
     def plot_stability_results(self, results: List[List], duty: str) -> None:
         """Plot stability test results"""
         fig = plt.figure(dpi=800, figsize=(8, 6))
         ax = fig.subplots(1, 1)
         
-        grid_names = self._get_grid_names()
+        grid_names = self.config.grid_names
         
         if self.config.question_id == 3:
             labels = ['焊球端', '无焊球端']
@@ -412,7 +407,7 @@ class Visualizer:
                     global_handles.append(line)
                 
                 local_handles[i].append(line)
-                local_labels[i].append(processor.calculate_variance_string(path_data))
+                local_labels[i].append(DataProcessor.calculate_variance_string(path_data))
                 
                 axes.flat[i].set_title(self.config.path_names[i])
                 axes.flat[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
@@ -471,6 +466,75 @@ class Visualizer:
         else:
             self.plot_stability_results([results[0]], duty)
 
+    def plot_temperature_comparison(self, data_dict: Dict, duty: str, output_path: str,
+                                   scale: bool = False, share_y: bool = False) -> None:
+        """Plot temperature comparison for given data"""
+        share_y = True if duty == 'CTE' else False
+        scale = True if duty == 'ela' else False
+
+        # Sort by temperature
+        sorted_data = sorted([(float(temp), temp, data) for temp, data in data_dict.items()])
+        
+        colors = cm.coolwarm(np.linspace(0, 1, len(sorted_data)))
+        
+        fig = plt.figure(figsize=(8, 6), dpi=800)
+        axes = fig.subplots(2, 3, sharex=True, sharey=share_y)
+        axes[1, 2].remove()
+        
+        height_strs = (self.config.height_strs_cte if duty == 'CTE' 
+                      else self.config.height_strs_ela)
+        
+        local_handles = [[] for _ in range(5)]
+        local_labels = [[] for _ in range(5)]
+        
+        for j, (_, temp_str, output) in enumerate(sorted_data):
+            for i, height_str in enumerate(height_strs):
+                if height_str not in output.columns:
+                    continue
+                
+                if i == 1:
+                    line, = axes.flat[i].plot(output[height_str], 
+                                            label=f'Temp:{temp_str}℃', 
+                                            color=colors[j])
+                else:
+                    line, = axes.flat[i].plot(output[height_str], 
+                                            color=colors[j])                    
+                axes.flat[i].set_title(self.config.path_names[i])
+                axes.flat[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                
+                local_handles[i].append(line)
+                local_labels[i].append(DataProcessor.calculate_variance_string(output[height_str]))
+                
+                if scale:
+                    axes.flat[i].set_ylim(self.config.yscale)
+        
+        # Add legends
+        for i in range(5):
+            if local_handles[i]:
+                axes.flat[i].legend(local_handles[i], local_labels[i], 
+                                  fontsize=3, loc='upper right', ncol=2)
+        
+        fig.legend(bbox_to_anchor=(0.95, 0.4), fontsize=8, ncol=2)
+        fig.supxlabel('节点序号', fontsize=12)
+        
+        if duty == 'CTE':
+            fig.supylabel('CTE热膨胀系数', fontsize=12)
+            fig.suptitle(self.config.cte_title, fontsize=12)
+        else:
+            fig.supylabel('拉伸模量', fontsize=12)
+            fig.suptitle(self.config.ela_title, fontsize=12)
+        
+        # Save with different variants
+        for suffix, use_scale, use_sharey in [('', False, False), 
+                                            ('-scale', True, False),
+                                            ('-sharey', False, True)]:
+            if (use_scale and not scale) or (use_sharey and not share_y):
+                continue
+            output_file = Path(output_path) / f'{duty}{suffix}.jpg'
+            fig.savefig(output_file)
+        
+        plt.close(fig)
+
 class EnhancedDataSorter:
     """Main class that orchestrates data processing and visualization"""
     
@@ -515,78 +579,9 @@ class EnhancedDataSorter:
             cte_data, ela_data = self.processor.get_total_dataframes(str(dir_path))
             
             if cte_data:
-                self._plot_temperature_comparison(cte_data, 'CTE', str(dir_path))
+                self.visualizer.plot_temperature_comparison(cte_data, 'CTE', str(dir_path))
             if ela_data:
-                self._plot_temperature_comparison(ela_data, 'ela', str(dir_path))
-    
-    def _plot_temperature_comparison(self, data_dict: Dict, duty: str, output_path: str,
-                                   scale: bool = False, share_y: bool = False) -> None:
-        """Plot temperature comparison for given data"""
-        share_y = True if duty == 'CTE' else False
-        scale = True if duty == 'ela' else False
-
-        # Sort by temperature
-        sorted_data = sorted([(float(temp), temp, data) for temp, data in data_dict.items()])
-        
-        colors = cm.coolwarm(np.linspace(0, 1, len(sorted_data)))
-        
-        fig = plt.figure(figsize=(8, 6), dpi=800)
-        axes = fig.subplots(2, 3, sharex=True, sharey=share_y)
-        axes[1, 2].remove()
-        
-        height_strs = (self.config.height_strs_cte if duty == 'CTE' 
-                      else self.config.height_strs_ela)
-        
-        local_handles = [[] for _ in range(5)]
-        local_labels = [[] for _ in range(5)]
-        
-        for j, (_, temp_str, output) in enumerate(sorted_data):
-            for i, height_str in enumerate(height_strs):
-                if height_str not in output.columns:
-                    continue
-                
-                if i == 1:
-                    line, = axes.flat[i].plot(output[height_str], 
-                                            label=f'Temp:{temp_str}℃', 
-                                            color=colors[j])
-                else:
-                    line, = axes.flat[i].plot(output[height_str], 
-                                            color=colors[j])                    
-                axes.flat[i].set_title(self.config.path_names[i])
-                axes.flat[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-                
-                local_handles[i].append(line)
-                local_labels[i].append(self.processor.calculate_variance_string(output[height_str]))
-                
-                if scale:
-                    axes.flat[i].set_ylim(self.config.yscale)
-        
-        # Add legends
-        for i in range(5):
-            if local_handles[i]:
-                axes.flat[i].legend(local_handles[i], local_labels[i], 
-                                  fontsize=3, loc='upper right', ncol=2)
-        
-        fig.legend(bbox_to_anchor=(0.95, 0.4), fontsize=8, ncol=2)
-        fig.supxlabel('节点序号', fontsize=12)
-        
-        if duty == 'CTE':
-            fig.supylabel('CTE热膨胀系数', fontsize=12)
-            fig.suptitle(self.config.cte_title, fontsize=12)
-        else:
-            fig.supylabel('拉伸模量', fontsize=12)
-            fig.suptitle(self.config.ela_title, fontsize=12)
-        
-        # Save with different variants
-        for suffix, use_scale, use_sharey in [('', False, False), 
-                                            ('-scale', True, False),
-                                            ('-sharey', False, True)]:
-            if (use_scale and not scale) or (use_sharey and not share_y):
-                continue
-            output_file = Path(output_path) / f'{duty}{suffix}.jpg'
-            fig.savefig(output_file)
-        
-        plt.close(fig)
+                self.visualizer.plot_temperature_comparison(ela_data, 'ela', str(dir_path))
 
 # Convenience functions for backward compatibility and easy usage
 def run_question_analysis(question: int, directories: List[str] = None, 
@@ -631,8 +626,8 @@ def main():
     """Main execution function with examples"""
     
     # Example 1: Basic analysis for each question
-    # print("Running Q1 analysis...")
-    # q1_sorter = analyze_q1()
+    print("Running Q1 analysis...")
+    q1_sorter = analyze_q1()
     
     # print("Running Q2 analysis...")
     # q2_sorter = analyze_q2()
@@ -644,8 +639,8 @@ def main():
     # print("Running mesh convergence studies...")
     
     # Q1 mesh convergence
-    q1_dirs = ['Q1-3', 'Q1-2.5']
-    run_mesh_convergence_study(1, q1_dirs)
+    # q1_dirs = ['Q1-3', 'Q1-2.5']
+    # run_mesh_convergence_study(1, q1_dirs)
     
     # # Q2 mesh convergence
     # q2_dirs = ['Q2v0-4', 'Q2v0-3.5', 'Q2v0-3', 'Q2v0-2.5', 'Q2v0-2', 

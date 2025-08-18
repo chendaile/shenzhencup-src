@@ -236,7 +236,7 @@ class DataProcessor:
             
             # Read file data
             try:
-                with open(file_path, 'r', encoding='utf-8') as file:
+                with open(file_path, 'r') as file:
                     csv_reader = csv.reader(file, delimiter='\t')
                     next(csv_reader)  # Skip header
                     values = [row[-1] for row in csv_reader if row]
@@ -247,7 +247,8 @@ class DataProcessor:
         
         if not data:
             return None
-            
+        # converted_data = {key: [float(value) for value in values] for key, values in data.items()}
+
         return pd.DataFrame(data, dtype=np.float64)
     
     def to_excel(self, input_folder: str, output_file: str) -> None:
@@ -321,13 +322,71 @@ class DataProcessor:
             'modulus': ['stress', 'strain']
         }
         duty_targeted = mapping[duty]
-
+        
+        all_processing_units = []
+        all_colors = []
+        
         for dir_name in dir_names:
             dir_path = Path(self.config.output_folder) / dir_name        
             result_list = self.get_total_dataframes(dir_path)
-            results_targeted = [result_list[x] for x in duty_targeted] 
-            # for result_targeted in results_targeted:
-            #     output_list = 
+            
+            # 为每个targeted duty创建处理单元
+            for duty_name in duty_targeted:
+                temp_data = result_list[duty_name]  # 温度字典
+                
+                processing_unit = []
+                colors = []
+                
+                # 获取所有温度值用于归一化
+                all_temps = [float(temp) for temp in temp_data.keys()]
+                min_temp, max_temp = min(all_temps), max(all_temps)
+                temp_range = max_temp - min_temp if max_temp != min_temp else 1
+                
+                # 处理每个温度的数据
+                for temp_str, route_data in temp_data.items():
+                    temp_val = float(temp_str)
+                    
+                    # 获取第一条线路数据
+                    first_route_name = list(route_data.columns)[0]
+                    route_values = route_data[first_route_name].values
+                    
+                    # 温度归一化 (0-1, 0=蓝色, 1=红色)
+                    temp_normalized = (temp_val - min_temp) / temp_range
+                    
+                    # 为这条线路的每个点生成颜色
+                    route_length = len(route_values)
+                    for i, value in enumerate(route_values):
+                        processing_unit.append(value)
+                        
+                        # 位置归一化 (0-1, 0和1为端点=黄色, 0.5为中心=绿色)
+                        if route_length > 1:
+                            pos_normalized = i / (route_length - 1)
+                            # 计算距离中心的距离，用于黄绿色插值
+                            center_distance = abs(pos_normalized - 0.5) * 2  # 0-1之间
+                        else:
+                            center_distance = 0
+                        
+                        # 生成颜色 (RGB格式)
+                        # 红蓝分量基于温度
+                        red = temp_normalized
+                        blue = 1 - temp_normalized
+                        
+                        # 绿黄分量基于位置
+                        # 靠近端点时，增加黄色(红+绿)，减少蓝色
+                        # 靠近中心时，增加绿色
+                        green = 0.3 + 0.7 * (1 - center_distance)  # 基础绿色 + 位置调节
+                        yellow_boost = center_distance * 0.5  # 端点黄色增强
+                        
+                        # 调整颜色
+                        red = min(1.0, red + yellow_boost)
+                        green = min(1.0, green + yellow_boost)
+                        
+                        colors.append((red, green, blue))
+                
+                all_processing_units.append(processing_unit)
+                all_colors.append(colors)
+        
+        return all_processing_units, all_colors
 
     @staticmethod
     def calculate_variance_string(data: pd.Series) -> str:
@@ -344,9 +403,10 @@ class Visualizer:
     
     def _setup_matplotlib(self) -> None:
         """Setup matplotlib with Chinese font support"""
+        
         plt.rcParams.update({
             'font.size': 7,
-            'font.family': 'SimHei',
+            'font.family': 'simhei',
             'axes.unicode_minus': False
         })
     
@@ -559,6 +619,85 @@ class Visualizer:
         
         plt.close(fig)
 
+    def plot_scatter_analysis(self, all_processing_units: List[List], all_colors: List[List], 
+                            duty: str, output_path: str = None, title_suffix: str = "") -> None:
+        if len(all_processing_units) != 2 or len(all_colors) != 2:
+            raise ValueError("Expected exactly 2 processing units and 2 color lists")
+        
+        # Extract data
+        x_data = all_processing_units[1]  # Second list for x-axis
+        y_data = all_processing_units[0]  # First list for y-axis
+        colors = all_colors[0]  # Use first color list (should be consistent)
+        
+        # Verify data consistency
+        if len(x_data) != len(y_data) or len(colors) != len(x_data):
+            raise ValueError("Data lengths don't match")
+        
+        # Create figure with academic style
+        plt.style.use('default')
+        fig, ax = plt.subplots(figsize=(10, 8), dpi=600)
+        
+        # Create scatter plot
+        scatter = ax.scatter(x_data, y_data, c=colors, s=50, alpha=0.7, 
+                            edgecolors='black', linewidth=0.5)
+        
+        # Set labels based on duty type
+        if duty == 'thermal':
+            ax.set_xlabel('温度 (Temperature)', fontsize=14, fontweight='bold')
+            ax.set_ylabel('热应变 (Thermal Strain)', fontsize=14, fontweight='bold')
+            title = f'Q{self.config.question_id}热应变-温度关系图{title_suffix}'
+        elif duty == 'modulus':
+            ax.set_xlabel('应变 (Strain)', fontsize=14, fontweight='bold')
+            ax.set_ylabel('应力 (Stress)', fontsize=14, fontweight='bold')
+            title = f'Q{self.config.question_id}应力-应变关系图{title_suffix}'
+        else:
+            ax.set_xlabel('X 值', fontsize=14, fontweight='bold')
+            ax.set_ylabel('Y 值', fontsize=14, fontweight='bold')
+            title = f'Q{self.config.question_id}数据关系图{title_suffix}'
+        
+        # Set title
+        ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
+        
+        # Customize grid
+        ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+        ax.set_axisbelow(True)
+        
+        # Customize spines
+        for spine in ax.spines.values():
+            spine.set_linewidth(1.2)
+            spine.set_color('black')
+        
+        # Set tick parameters
+        ax.tick_params(axis='both', which='major', labelsize=12, 
+                    direction='in', length=6, width=1.2)
+        ax.tick_params(axis='both', which='minor', direction='in', 
+                    length=3, width=1)
+        
+        # Enable minor ticks
+        ax.minorticks_on()
+        
+        # Format numbers in scientific notation if needed
+        ax.ticklabel_format(style='sci', axis='both', scilimits=(-3, 3))
+        
+        # Add color explanation text box
+        textstr = '颜色说明:\n温度: 蓝色(低) → 红色(高)\n位置: 绿色(中心) → 黄色(端点)'
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.8)
+        ax.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=10,
+                verticalalignment='top', bbox=props)
+        
+        # Adjust layout to prevent label cutoff
+        plt.tight_layout()
+        
+        # Save plot
+        output_path = self.config.output_folder
+        output_file = Path(output_path) / f'{duty}_scatter_analysis.png'
+        fig.savefig(output_file, dpi=600, bbox_inches='tight', 
+                    facecolor='white', edgecolor='none')
+        
+        plt.close(fig)
+        
+        print(f"Scatter plot saved: {output_file}")
+
 class EnhancedDataSorter:
     """Main class that orchestrates data processing and visualization"""
     
@@ -611,7 +750,8 @@ def run_question_analysis(question: int, directories: List[str] = None,
         base_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output"
     
     sorter = EnhancedDataSorter(question, base_path)
-    
+    all_processing_units, all_colors = sorter.processor.get_aver_scatter(['Q2-0.5'], 'thermal')
+    sorter.visualizer.plot_scatter_analysis(all_processing_units, all_colors, 'thermal')
     if directories:
         sorter.generate_excel_and_plots(directories)
     
@@ -625,12 +765,12 @@ def analyze_q1(base_path: str = None):
 
 def analyze_q2(base_path: str = None):
     """Analyze Question 2"""
-    directories = ['Q2-2']
+    directories = ['Q2-0.5']
     return run_question_analysis(2, directories, base_path)
 
 def analyze_q3(base_path: str = None):
     """Analyze Question 3"""
-    directories = ['Q3-0.2']
+    directories = ['Q3-2']
     return run_question_analysis(3, directories, base_path)
 
 def run_mesh_convergence_study(question: int, dir_names: List[str]) -> None:

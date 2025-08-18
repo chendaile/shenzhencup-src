@@ -26,6 +26,7 @@ class QuestionConfig:
             'ela': '拉伸模量',
             'Ther': '热应变',
             'stress': '对角线方向应力',
+            'Temp': '温度',
             'strain': '对角线方向应变'
         })
 
@@ -291,7 +292,7 @@ class DataProcessor:
         input_path = Path(input_folder)
         result_list = {}
 
-        dutys = ['CTE', 'ela', 'Ther', 'stress', 'strain']
+        dutys = ['CTE', 'ela', 'Ther', 'stress', 'strain', 'Temp']
         for duty in dutys:
             result_data = {}
             for folder_name in input_path.iterdir():
@@ -310,7 +311,24 @@ class DataProcessor:
             result_list[duty] = result_data
 
         return result_list
-    
+
+    def get_aver_scatter(self, dir_names: List[str], duty: str):
+        if duty not in ['thermal', 'modulus']:
+            raise ValueError(f"{duty} not in ['thermal', 'modulus']")
+        
+        mapping = {
+            'thermal': ['Ther', 'Temp'],
+            'modulus': ['stress', 'strain']
+        }
+        duty_targeted = mapping[duty]
+
+        for dir_name in dir_names:
+            dir_path = Path(self.config.output_folder) / dir_name        
+            result_list = self.get_total_dataframes(dir_path)
+            results_targeted = [result_list[x] for x in duty_targeted] 
+            # for result_targeted in results_targeted:
+            #     output_list = 
+
     @staticmethod
     def calculate_variance_string(data: pd.Series) -> str:
         """Calculate variance and return formatted string"""

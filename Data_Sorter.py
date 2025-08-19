@@ -74,6 +74,7 @@ class ConfigManager:
                 'Q1-3': 'FQN 3mm Grid',
                 'Q1-2.5': 'FQN 2.5mm Grid',
                 'Q1-0.5': 'FQN 0.5mm Grid',
+                'Q1-0.3': 'FQN 0.3mm Grid',
                 'Q1-1.5': 'FQN 1.5mm Grid'
             },
             path_names=[
@@ -105,7 +106,7 @@ class ConfigManager:
                 'ela-Path-height-2mm_to_0mm'
             ],
             grid_names=['3mm Grid', '2.5mm Grid', '2mm Grid', '1.5mm Grid',
-                        '1mm Grid', '0.5mm Grid']
+                        '1mm Grid', '0.5mm Grid', '0.3mm Grid']
         )
     
     @staticmethod
@@ -168,6 +169,7 @@ class ConfigManager:
                 'Q3-3': 'BGA 3mm Grid',
                 'Q3-2.5': 'BGA 2.5mm Grid',
                 'Q3-0.5': 'BGA 0.5mm Grid',
+                'Q3-0.3': 'BGA 0.3mm Grid',
                 'Q3-1.5': 'BGA 1.5mm Grid'
             },
             path_names=[
@@ -199,7 +201,7 @@ class ConfigManager:
                 'ela-Path-height-1.97mm_to_0mm_无焊球端'
             ],
             grid_names=['3mm Grid', '2.5mm Grid', '2mm Grid', '1.5mm Grid',
-                        '1mm Grid', '0.5mm Grid']
+                        '1mm Grid', '0.5mm Grid', '0.3mm Grid']
         )
     
 class DataProcessor:
@@ -630,9 +632,9 @@ class Visualizer:
             'center_solder': '#3498DB',     # Blue
             'intermediate_solder': "#C3F449", # Light green
             # Q3 specific - no solder side  
-            'edge_no_solder': '#8B0000',       # Dark red
-            'center_no_solder': '#00008B',     # Dark blue  
-            'intermediate_no_solder': "#7A8B00", # Dark green
+            'edge_no_solder': "#A31600EB",       # Dark red
+            'center_no_solder': "#000DC9",     # Dark blue  
+            'intermediate_no_solder': "#869800", # Dark green
         }
 
         position_styles = {
@@ -643,16 +645,15 @@ class Visualizer:
             'edge_solder': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
             'center_solder': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
             'intermediate_solder': {'color': "#C3F449", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
-            'edge_no_solder': {'color': '#8B0000', 'linestyle': '-.', 'alpha': 0.7, 'linewidth': 2.2},
-            'center_no_solder': {'color': '#00008B', 'linestyle': '-.', 'alpha': 0.7, 'linewidth': 2.2},
-            'intermediate_no_solder': {'color': "#7A8B00", 'linestyle': '-.', 'alpha': 0.7, 'linewidth': 2.2},
+            'edge_no_solder': {'color': "#A31600EB", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'center_no_solder': {'color': "#000DC9", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'intermediate_no_solder': {'color': "#869800", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
         }
 
         grouped_data = defaultdict(list)
         for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
             grouped_data[(temp_cat, pos_cat)].append((x, y))
-        
-        # Plot each group with appropriate style
+
         plotted_temp_cats = set()
         plotted_pos_cats = set()
         
@@ -664,7 +665,7 @@ class Visualizer:
             ax.scatter(xs, ys, 
                       marker=marker,
                       c=color,
-                      s=80,  # Slightly larger markers
+                      s=80,
                       alpha=0.7,
                       edgecolors='black',
                       linewidth=0.8,
@@ -1019,7 +1020,7 @@ class Visualizer:
             ax1.set_axisbelow(True)
             
             # Add legend
-            ax1.legend(loc='best', frameon=True, fancybox=True,
+            ax1.legend(loc='center right', frameon=True, fancybox=True,
                     shadow=True, framealpha=0.95, edgecolor='#CCCCCC',
                     fontsize=10, title='Position', title_fontsize=11)
             
@@ -1075,7 +1076,7 @@ class Visualizer:
             ax2.set_axisbelow(True)
             
             # Add legend
-            ax2.legend(loc='best', frameon=True, fancybox=True,
+            ax2.legend(loc='center right', frameon=True, fancybox=True,
                     shadow=True, framealpha=0.95, edgecolor='#CCCCCC',
                     fontsize=10, title='Position', title_fontsize=11)
             
@@ -1267,10 +1268,8 @@ class EnhancedDataSorter:
             self.visualizer.plot_scatter_analysis(all_processing_units, all_shapes, duty_type, dir_name)
         print(f"Scatter analysis completed for {duty_type}\n")
 
-def run_question_analysis(question: int, directories: List[str] = None, 
-                         base_path: str = None) -> EnhancedDataSorter:
-    if base_path is None:
-        base_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output"
+def run_question_analysis(question: int, directories: List[str] = None) -> EnhancedDataSorter:
+    base_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output"
     print(f"=" * 60)
     print(f"Starting Analysis for Question {question}")
     print(f"=" * 60)
@@ -1291,36 +1290,36 @@ def run_question_analysis(question: int, directories: List[str] = None,
     
     return sorter
 
-def analyze_q1(base_path: str = None):
+def analyze_q1():
 
     print("\n" + "="*60)
     print("QUESTION 1: BGA GRID REFINEMENT ANALYSIS")
     print("="*60)
     
-    directories = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1','Q1-0.5']
-    sorter = run_question_analysis(1, directories, base_path)
+    directories = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1','Q1-0.5', 'Q1-0.3']
+    sorter = run_question_analysis(1, directories)
     
     return sorter
 
-def analyze_q2(base_path: str = None):
+def analyze_q2():
 
     print("\n" + "="*60)
     print("QUESTION 2: CHIP PRECISION GRID ANALYSIS")
     print("="*60)
     
     directories = ['Q2-3', 'Q2-2.5', 'Q2-2', 'Q2-1.5', 'Q2-1','Q2-0.5']
-    sorter = run_question_analysis(2, directories, base_path)
+    sorter = run_question_analysis(2, directories)
     
     return sorter
 
-def analyze_q3(base_path: str = None):
+def analyze_q3():
 
     print("\n" + "="*60)
     print("QUESTION 3: SOLDER BALL CONFIGURATION ANALYSIS")
     print("="*60)
     
-    directories = ['Q3-3', 'Q3-2.5', 'Q3-2', 'Q3-1.5', 'Q3-1','Q3-0.5']
-    sorter = run_question_analysis(3, directories, base_path)
+    directories = ['Q3-3', 'Q3-2.5', 'Q3-2', 'Q3-1.5', 'Q3-1','Q3-0.5', 'Q3-0.3']
+    sorter = run_question_analysis(3, directories)
     
     return sorter
 
@@ -1349,9 +1348,9 @@ def main():
     if True: 
         print("\n Running Basic Analysis for All Questions")
         print("-"*50)
-        q1_sorter = analyze_q1(None, detailed=False)
-        q2_sorter = analyze_q2(None, detailed=False)
-        q3_sorter = analyze_q3(None, detailed=False)
+        # q1_sorter = analyze_q1()
+        q2_sorter = analyze_q2()
+        # q3_sorter = analyze_q3()
     
     print("\n" + "="*70)
     print(" "*20 + "ANALYSIS PIPELINE COMPLETED")

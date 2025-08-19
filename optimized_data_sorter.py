@@ -882,12 +882,29 @@ class Visualizer:
             'medium': 'Med. Temp.',
             'high': 'High Temp.'
         }
+        # Regression line styles
+        position_styles = {
+            'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'intermediate': {'color': "#C3F449", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2}
+        }
+        
+        temp_styles = {
+            'low': {'color': '#2ECC71', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
+            'medium': {'color': '#F39C12', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
+            'high': {'color': '#8E44AD', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2}
+        }
+        
         for cat in ['low', 'medium', 'high']:  # Fixed order
             if cat in plotted_temp_cats:
-                temp_legend.append(Line2D([0], [0], marker=temp_markers[cat], 
-                                         color='w', markerfacecolor='gray',
-                                         markersize=9, markeredgecolor='black',
-                                         markeredgewidth=0.8, label=temp_labels[cat]))
+                temp_legend.append(Line2D([0], [0], 
+                          marker=temp_markers[cat],
+                          color=temp_styles[cat]['color'],
+                          markerfacecolor='gray',
+                          markeredgecolor='black',
+                          markeredgewidth=0.8,
+                          markersize=9,
+                          label=temp_labels[cat]))
         
         # Position category legend elements  
         pos_legend = []
@@ -960,27 +977,38 @@ class Visualizer:
                           columnspacing=1.2,
                           handletextpad=0.8)
         
-        # Perform comprehensive regression analysis with zero intercept
+        # Perform comprehensive regression analysis with duty-dependent fixed point
         from scipy import stats
         import numpy as np
         
-        # Function to perform regression with zero intercept
-        def zero_intercept_regression(x, y):
-            """Perform linear regression forcing intercept to 0"""
+        # Determine fixed point based on duty
+        if duty == 'thermal':
+            fixed_x = 25.0  # For temperature, force through (25, 0)
+            fixed_y = 0.0
+        else:
+            fixed_x = 0.0   # For modulus or others, force through (0, 0)
+            fixed_y = 0.0
+        
+        # Function to perform regression forcing through (fixed_x, fixed_y)
+        def forced_point_regression(x, y, fixed_x=0.0, fixed_y=0.0):
+            """Perform linear regression forcing through a fixed point"""
             x = np.array(x)
             y = np.array(y)
-            # For y = ax (no intercept), a = sum(xy) / sum(x^2)
-            slope = np.sum(x * y) / np.sum(x * x)
-            # Calculate R-squared
-            y_pred = slope * x
+            dx = x - fixed_x
+            dy = y - fixed_y
+            # Slope m = sum(dx * dy) / sum(dx ** 2)
+            slope = np.sum(dx * dy) / np.sum(dx ** 2)
+            # Predicted y = slope * dx + fixed_y
+            y_pred = slope * dx + fixed_y
+            # R-squared
             ss_res = np.sum((y - y_pred) ** 2)
             ss_tot = np.sum((y - np.mean(y)) ** 2)
             r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
-            # Calculate p-value (simplified)
+            # p-value
             n = len(x)
             if n > 2:
                 se = np.sqrt(ss_res / (n - 1))
-                t_stat = slope / (se / np.sqrt(np.sum(x * x)))
+                t_stat = slope / (se / np.sqrt(np.sum(dx ** 2)))
                 from scipy.stats import t
                 p_value = 2 * (1 - t.cdf(abs(t_stat), n - 1))
             else:
@@ -1002,19 +1030,6 @@ class Visualizer:
             temp_data[temp_cat].append((x, y))
             combined_data[(temp_cat, pos_cat)].append((x, y))
         
-        # Regression line styles
-        position_styles = {
-            'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
-            'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
-            'intermediate': {'color': "#C3F449", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2}
-        }
-        
-        temp_styles = {
-            'low': {'color': '#2ECC71', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
-            'medium': {'color': '#F39C12', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
-            'high': {'color': '#8E44AD', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2}
-        }
-        
         # Store regression results
         position_regressions = []
         temp_regressions = []
@@ -1031,7 +1046,7 @@ class Visualizer:
                 continue
             
             try:
-                slope, r_squared, p_value = zero_intercept_regression(cat_x, cat_y)
+                slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
                 
                 # Plot regression line with extended range
                 # Extend range significantly to ensure visibility
@@ -1039,7 +1054,7 @@ class Visualizer:
                 x_min = min(x_data) - length*2
                 x_max = max(x_data) + length*2
                 x_range = np.array([x_min, x_max])
-                y_range = slope * x_range
+                y_range = slope * (x_range - fixed_x) + fixed_y
                 
                 style = position_styles.get(pos_cat, position_styles['intermediate'])
                 ax.plot(x_range, y_range, 
@@ -1071,7 +1086,7 @@ class Visualizer:
                 continue
             
             try:
-                slope, r_squared, p_value = zero_intercept_regression(cat_x, cat_y)
+                slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
                 
                 # Plot regression line with extended range
                 # Extend range significantly to ensure visibility
@@ -1080,7 +1095,7 @@ class Visualizer:
                 x_max = max(x_data) + length*2
 
                 x_range = np.array([x_min, x_max])
-                y_range = slope * x_range
+                y_range = slope * (x_range - fixed_x) + fixed_y
                 
                 style = temp_styles.get(temp_cat, temp_styles['medium'])
                 ax.plot(x_range, y_range, 
@@ -1100,26 +1115,26 @@ class Visualizer:
             except:
                 continue
         
-        # Overall regression with all data (zero intercept)
-        slope_all, r_squared_all, p_value_all = zero_intercept_regression(x_data, y_data)
+        # Overall regression with all data (duty-dependent fixed point)
+        slope_all, r_squared_all, p_value_all = forced_point_regression(x_data, y_data, fixed_x=fixed_x, fixed_y=fixed_y)
         
         # Plot overall regression line with extended range
         length = max(x_data) - min(x_data)
         x_min = min(x_data) - length*0.5
         x_max = max(x_data) + length*0.5
         x_line = np.array([x_min, x_max])
-        y_line = slope_all * x_line
+        y_line = slope_all * (x_line - fixed_x) + fixed_y
         ax.plot(x_line, y_line, 'k-', alpha=0.9, linewidth=3.0, 
                zorder=3)
         
         # Create comprehensive regression summary text in lower right
         regression_text = "━━━ REGRESSION ANALYSIS ━━━\n"
-        regression_text += "(All fits: y = ax, b = 0)\n\n"
+        regression_text += f"(All fits: y = a(x - {fixed_x:.1f}) + {fixed_y:.1f})\n\n"
         
         # Overall regression
         regression_text += f"▶ Overall (black solid):\n"
         regression_text += f"  R² = {r_squared_all:.3f}, n = {len(x_data)}\n"
-        regression_text += f"  y = {slope_all:.3e}x\n\n"
+        regression_text += f"  y = {slope_all:.3e}(x - {fixed_x:.1f})\n\n"
         
         # Position-based regressions
         if position_regressions:
@@ -1389,11 +1404,11 @@ def main():
             print("-"*50)
             
             # Custom Q1 convergence
-            q1_custom_dirs = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1']
-            # run_mesh_convergence_study(1, q1_custom_dirs)
+            q1_custom_dirs = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1', 'Q1-0.5']
+            run_mesh_convergence_study(1, q1_custom_dirs)
             
             # Custom Q2 convergence with fine meshes
-            q2_fine_dirs = ['Q2-0.1', 'Q2-0.09', 'Q2-0.08', 'Q2-0.07', 'Q2-0.05']
+            # q2_fine_dirs = ['Q2-0.1', 'Q2-0.09', 'Q2-0.08', 'Q2-0.07', 'Q2-0.05']
             # run_mesh_convergence_study(2, q2_fine_dirs)
         
         print("\n" + "="*70)

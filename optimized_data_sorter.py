@@ -100,7 +100,8 @@ class ConfigManager:
                 'ela-Path-height-0.5mm', 
                 'ela-Path-height-2mm_to_0mm'
             ],
-            grid_names=['3mm Grid', '2.5mm Grid']
+            grid_names=['3mm Grid', '2.5mm Grid', '2mm Grid', '1.5mm Grid',
+                        '1mm Grid', '0.5mm Grid']
         )
     
     @staticmethod
@@ -144,9 +145,8 @@ class ConfigManager:
                 'ela-Path-height-0.87mm', 
                 'ela-Path-height-3.57mm_to_0mm'
             ],
-            grid_names=['4mm Grid', '3.5mm Grid', '3mm Grid', '2.5mm Grid', '2mm Grid',
-                       '1.5mm Grid', '1mm Grid', '0.5mm Grid', '0.2mm Grid', '0.1mm Grid',
-                       '0.09mm Grid', '0.08mm Grid', '0.07mm Grid']
+            grid_names=['3mm Grid', '2.5mm Grid', '2mm Grid', '1.5mm Grid',
+                        '1mm Grid', '0.5mm Grid']
         )
     
     @staticmethod
@@ -197,8 +197,8 @@ class ConfigManager:
                 'ela-Path-height-1.97mm_to_0mm_焊球端',
                 'ela-Path-height-1.97mm_to_0mm_无焊球端'
             ],
-            grid_names=['5mm Grid', '4mm Grid', '3mm Grid', '2mm Grid', '1mm Grid',
-                       '0.5mm Grid', '0.4mm Grid', '0.3mm Grid', '0.2mm Grid']
+            grid_names=['3mm Grid', '2.5mm Grid', '2mm Grid', '1.5mm Grid',
+                        '1mm Grid', '0.5mm Grid']
         )
     
 class DataProcessor:
@@ -410,6 +410,22 @@ class DataProcessor:
         
         relative_pos = index / (total_length - 1)
         
+        if self.config.question_id == 3:
+            center_index = total_length // 2
+            
+            if index < center_index:
+                side = 'solder'  # Solder ball side (near side)
+            else:
+                side = 'no_solder'  # No solder ball side (far side)
+            
+            if relative_pos <= 0.1 or relative_pos >= 0.9:
+                return f'edge_{side}'
+            elif 0.4 <= relative_pos <= 0.6:
+                return f'center_{side}'
+            else:
+                return f'intermediate_{side}'
+        
+        # Original logic for Q1 and Q2
         if relative_pos <= 0.1 or relative_pos >= 0.9:
             return 'edge'
         elif 0.4 <= relative_pos <= 0.6:
@@ -464,7 +480,7 @@ class Visualizer:
             'ytick.color': '#333333',
             'figure.facecolor': 'white',
             'axes.facecolor': 'white',
-            'savefig.dpi': 300,
+            'savefig.dpi': 600,
             'savefig.bbox': 'tight',
             'savefig.pad_inches': 0.1
         })
@@ -475,7 +491,7 @@ class Visualizer:
             raise ValueError(f"{duty} not in ['CTE', 'ela']")
         
         # Create figure with golden ratio proportions
-        fig, ax = plt.subplots(figsize=(10, 6.18), dpi=300)
+        fig, ax = plt.subplots(figsize=(10, 6.18), dpi=600)
         
         grid_names = self.config.grid_names
         
@@ -537,7 +553,7 @@ class Visualizer:
         plt.tight_layout()
         
         output_path = Path(self.config.output_folder) / f'{ylabel.replace(" ", "_")}_grid_refinement_results.png'
-        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+        fig.savefig(output_path, dpi=600, bbox_inches='tight')
         plt.close(fig)
     
     def plot_multi_mesh_comparison(self, dir_names: List[str], duty: str, step: int,
@@ -550,7 +566,7 @@ class Visualizer:
         colors = plt.cm.get_cmap('tab10')(np.linspace(0, 0.9, len(dir_names)))
         
         # Create figure with better proportions
-        fig = plt.figure(figsize=(14, 8), dpi=300)
+        fig = plt.figure(figsize=(14, 8), dpi=600)
         
         # Create subplots with better spacing
         gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.25)
@@ -677,7 +693,7 @@ class Visualizer:
         output_name += f'-STEP{step}'
         
         output_path = Path(self.config.output_folder) / f'{output_name}.png'
-        fig.savefig(output_path, dpi=300, bbox_inches='tight', 
+        fig.savefig(output_path, dpi=600, bbox_inches='tight', 
                    facecolor='white', edgecolor='none')
         plt.close(fig)
         
@@ -788,7 +804,7 @@ class Visualizer:
         suffix = '-shareY' if share_y else ''
         suffix += '-scale' if scale else ''
         output_file = Path(output_path) / f'{duty}_temperature_analysis{suffix}.png'
-        fig.savefig(output_file, dpi=300, bbox_inches='tight',
+        fig.savefig(output_file, dpi=600, bbox_inches='tight',
                    facecolor='white', edgecolor='none')
         
         plt.close(fig)
@@ -815,25 +831,40 @@ class Visualizer:
             'high': '^'     # Triangle
         }
         
-        pos_colors = {
-            'edge': '#E74C3C',       # Red for edges
-            'center': '#3498DB',     # Blue for center
-            'intermediate': "#C3F449", # Gray for intermediate
-            'single': '#2ECC71'      # Green for single point
-        }
-
-        position_styles = {
-            'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
-            'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
-            'intermediate': {'color': "#C3F449", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2}
-        }
-        
         temp_styles = {
             'low': {'color': '#2ECC71', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
             'medium': {'color': '#F39C12', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
             'high': {'color': '#8E44AD', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2}
         }
         
+        pos_colors = {
+            'edge': '#E74C3C',       # Red for edges
+            'center': '#3498DB',     # Blue for center
+            'intermediate': "#C3F449", # Light green for intermediate
+            'single': '#2ECC71',      # Green for single point
+            # Q3 specific - solder side
+            'edge_solder': '#E74C3C',       # Red 
+            'center_solder': '#3498DB',     # Blue
+            'intermediate_solder': "#C3F449", # Light green
+            # Q3 specific - no solder side  
+            'edge_no_solder': '#8B0000',       # Dark red
+            'center_no_solder': '#00008B',     # Dark blue  
+            'intermediate_no_solder': "#7A8B00", # Dark green
+        }
+
+        position_styles = {
+            'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'intermediate': {'color': "#C3F449", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            # Q3 specific styles
+            'edge_solder': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'center_solder': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'intermediate_solder': {'color': "#C3F449", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'edge_no_solder': {'color': '#8B0000', 'linestyle': '-.', 'alpha': 0.7, 'linewidth': 2.2},
+            'center_no_solder': {'color': '#00008B', 'linestyle': '-.', 'alpha': 0.7, 'linewidth': 2.2},
+            'intermediate_no_solder': {'color': "#7A8B00", 'linestyle': '-.', 'alpha': 0.7, 'linewidth': 2.2},
+        }
+
         grouped_data = defaultdict(list)
         for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
             grouped_data[(temp_cat, pos_cat)].append((x, y))
@@ -883,13 +914,27 @@ class Visualizer:
             'edge': 'Edge Points',
             'center': 'Center Points',
             'intermediate': 'Intermediate',
-            'single': 'Single Point'
+            'single': 'Single Point',
+            # Q3 specific
+            'edge_solder': 'Edge (Solder Side)',
+            'center_solder': 'Center (Solder Side)',
+            'intermediate_solder': 'Intermediate (Solder Side)',
+            'edge_no_solder': 'Edge (No Solder Side)',
+            'center_no_solder': 'Center (No Solder Side)',
+            'intermediate_no_solder': 'Intermediate (No Solder Side)',
         }
-        for cat in ['edge', 'center', 'intermediate', 'single']:
+
+        if self.config.question_id == 3:
+            categories_to_show = ['edge_solder', 'center_solder', 'intermediate_solder',
+                                'edge_no_solder', 'center_no_solder', 'intermediate_no_solder']
+        else:
+            categories_to_show = ['edge', 'center', 'intermediate', 'single']
+
+        for cat in categories_to_show:
             if cat in plotted_pos_cats:
                 pos_legend.append(Patch(facecolor=pos_colors[cat], 
-                                       edgecolor='black', linewidth=0.8,
-                                       label=pos_labels[cat]))
+                                    edgecolor='black', linewidth=0.8,
+                                    label=pos_labels[cat]))
         
         x_range = max(x_data) - min(x_data)
         y_range = max(y_data) - min(y_data)
@@ -966,8 +1011,14 @@ class Visualizer:
             return slope, r_squared, p_value
         
         # Perform regression for each position category
+        if self.config.question_id == 3:
+            position_categories = ['edge_solder', 'center_solder', 'intermediate_solder',
+                                'edge_no_solder', 'center_no_solder', 'intermediate_no_solder']
+        else:
+            position_categories = ['edge', 'center', 'intermediate']
+
         position_regressions = []
-        for pos_cat in ['edge', 'center', 'intermediate']:
+        for pos_cat in position_categories:
             cat_points = [point for key in grouped_data if key[1] == pos_cat for point in grouped_data[key]]
             cat_x, cat_y = zip(*cat_points)
 
@@ -995,7 +1046,7 @@ class Visualizer:
         # Perform regression for each temperature category
         temp_regressions = []
         for temp_cat in ['low', 'medium', 'high']:
-            cat_points = [point for key in grouped_data if key[0] == temp_cat for point in grouped_data[key]]
+            cat_points = [point for key in grouped_data if key[0] == temp_cat and 'edge' in key[1] for point in grouped_data[key]]
             cat_x, cat_y = zip(*cat_points)
 
             slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
@@ -1037,7 +1088,7 @@ class Visualizer:
         
         # Position-based regressions
         if position_regressions:
-            regression_text += "▶ By Position (solid lines):\n"
+            regression_text += "▶ Average temp By Position(solid lines):\n"
             for result in position_regressions:
                 cat_name = result['category'].capitalize()[:6]
                 regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
@@ -1047,7 +1098,7 @@ class Visualizer:
         
         # Temperature-based regressions
         if temp_regressions:
-            regression_text += "▶ By Temperature (dashed):\n"
+            regression_text += "▶ By Temperature in edge(dashed):\n"
             for result in temp_regressions:
                 cat_name = result['category'].capitalize()
                 regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
@@ -1114,7 +1165,7 @@ class Visualizer:
         # Save plot with high quality
         output_path = output_path or self.config.output_folder
         output_file = Path(output_path) / f'{duty}_scatter_analysis_academic.png'
-        fig.savefig(output_file, dpi=300, bbox_inches='tight', 
+        fig.savefig(output_file, dpi=600, bbox_inches='tight', 
                    facecolor='white', edgecolor='none', pad_inches=0.15)
         
         plt.close(fig)
@@ -1180,7 +1231,6 @@ class EnhancedDataSorter:
         self.visualizer.plot_scatter_analysis(all_processing_units, all_shapes, duty_type)
         print(f"Scatter analysis completed for {duty_type}\n")
 
-# Convenience functions for backward compatibility and easy usage
 def run_question_analysis(question: int, directories: List[str] = None, 
                          base_path: str = None, include_scatter: bool = True) -> EnhancedDataSorter:
     if base_path is None:
@@ -1245,26 +1295,13 @@ def analyze_q3(base_path: str = None, detailed: bool = True):
 
 def run_mesh_convergence_study(question: int, dir_names: List[str], 
                                output_suffix: str = "") -> None:
-    """
-    Run detailed mesh convergence study for specified question and directories
-    
-    Parameters:
-    -----------
-    question : int
-        Question number
-    dir_names : List[str]
-        Directory names to compare
-    output_suffix : str
-        Additional suffix for output files
-    """
     print(f"\n{'='*60}")
     print(f"MESH CONVERGENCE STUDY - QUESTION {question}")
     print(f"{'='*60}")
     print(f"Comparing {len(dir_names)} mesh configurations...")
     
     sorter = EnhancedDataSorter(question)
-    
-    # Run with different visualization options
+
     print("\nGenerating CTE convergence plots...")
     sorter.process_directories(dir_names, 'CTE', share_y=True, step=0)
     
@@ -1273,32 +1310,21 @@ def run_mesh_convergence_study(question: int, dir_names: List[str],
     
     print(f"Mesh convergence study completed for Question {question}\n")
 
-# Main execution function
 def main():
-    """
-    Main execution function with comprehensive analysis pipeline
-    """
     print("\n" + "="*70)
     print(" "*20 + "ENHANCED DATA ANALYSIS SYSTEM")
     print(" "*15 + "Academic Publication Quality Output")
     print("="*70)
-    
-    # Configuration
-    base_path = None  # Use default or specify custom path
-    
-    # Example 1: Basic analysis for each question
-    if True:  # Set to False to skip
-        print("\n[1] Running Basic Analysis for All Questions")
-        print("-"*50)
-        
-        # Uncomment the analyses you want to run
-        q1_sorter = analyze_q1(base_path, detailed=False)
-        q2_sorter = analyze_q2(base_path, detailed=False)
-        q3_sorter = analyze_q3(base_path, detailed=False)
 
-    # Example 3: Custom mesh convergence studies
+    if True:  # Set to False to skip
+        print("\n Running Basic Analysis for All Questions")
+        print("-"*50)
+        q1_sorter = analyze_q1(None, detailed=False)
+        q2_sorter = analyze_q2(None, detailed=False)
+        q3_sorter = analyze_q3(None, detailed=False)
+
     if False:  # Set to True to enable
-        print("\n[3] Running Custom Mesh Convergence Studies")
+        print("\n Running Custom Mesh Convergence Studies")
         print("-"*50)
         
         # Custom Q1 convergence
@@ -1314,6 +1340,5 @@ def main():
     print(" "*15 + "All outputs saved to configured directories")
     print("="*70 + "\n")
     
-
 if __name__ == "__main__":
     main()

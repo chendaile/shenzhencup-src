@@ -700,7 +700,13 @@ class Visualizer:
         # Create figure with optimal layout
         fig = plt.figure(figsize=(14, 8), dpi=600)
         gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.25)
-        axes = [fig.add_subplot(gs[i//3, i%3]) for i in range(5)]
+        axes = []
+        for i in range(5):
+            if i == 0:
+                ax = fig.add_subplot(gs[i//3, i%3])
+            else:
+                ax = fig.add_subplot(gs[i//3, i%3], sharey=axes[0])
+            axes.append(ax)
         
         height_strs = (self.config.height_strs_cte if duty == 'CTE' 
                       else self.config.height_strs_ela)
@@ -1263,24 +1269,6 @@ class EnhancedDataSorter:
 # Convenience functions for backward compatibility and easy usage
 def run_question_analysis(question: int, directories: List[str] = None, 
                          base_path: str = None, include_scatter: bool = True) -> EnhancedDataSorter:
-    """
-    Run comprehensive analysis for a specific question
-    
-    Parameters:
-    -----------
-    question : int
-        Question number (1, 2, or 3)
-    directories : List[str]
-        List of directory names to process
-    base_path : str
-        Base path for output directory
-    include_scatter : bool
-        Whether to include scatter plot analysis
-    
-    Returns:
-    --------
-    EnhancedDataSorter : The sorter object for further processing
-    """
     if base_path is None:
         base_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output"
     
@@ -1309,41 +1297,18 @@ def run_question_analysis(question: int, directories: List[str] = None,
 
 # Specific analysis functions for each question
 def analyze_q1(base_path: str = None, detailed: bool = True):
-    """
-    Analyze Question 1 with BGA grid refinement
-    
-    Parameters:
-    -----------
-    base_path : str
-        Base path for output directory
-    detailed : bool
-        Whether to include detailed analysis
-    """
+
     print("\n" + "="*60)
     print("QUESTION 1: BGA GRID REFINEMENT ANALYSIS")
     print("="*60)
     
-    directories = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1'] if detailed else ['Q1-3']
+    directories = ['Q1-0.5']
     sorter = run_question_analysis(1, directories, base_path)
-    
-    if detailed:
-        print("\nRunning mesh convergence study for Q1...")
-        sorter.process_directories(directories[:2], 'CTE', share_y=True, step=1)
-        sorter.process_directories(directories[:2], 'ela', scale=True, step=1)
     
     return sorter
 
 def analyze_q2(base_path: str = None, detailed: bool = True):
-    """
-    Analyze Question 2 with chip precision grid
-    
-    Parameters:
-    -----------
-    base_path : str
-        Base path for output directory
-    detailed : bool
-        Whether to include detailed analysis
-    """
+
     print("\n" + "="*60)
     print("QUESTION 2: CHIP PRECISION GRID ANALYSIS")
     print("="*60)
@@ -1351,60 +1316,16 @@ def analyze_q2(base_path: str = None, detailed: bool = True):
     directories = ['Q2-0.5']
     sorter = run_question_analysis(2, directories, base_path)
     
-    if detailed :
-        print("\nRunning extensive mesh convergence study for Q2...")
-        extended_dirs = ['Q2v0-4', 'Q2v0-3.5', 'Q2v0-3', 'Q2v0-2.5', 'Q2v0-2', 
-                        'Q2v0-1.5', 'Q2v0-1', 'Q2v0-0.5', 'Q2v0-0.2', 'Q2v0-0.1', 
-                        'Q2v0-0.09', 'Q2v0-0.08', 'Q2v0-0.07']
-        
-        # Check which directories exist
-        available_dirs = []
-        for dir_name in extended_dirs:
-            dir_path = Path(sorter.config.output_folder) / dir_name
-            if dir_path.exists():
-                available_dirs.append(dir_name)
-        
-        if available_dirs:
-            print(f"Found {len(available_dirs)} directories for convergence study")
-            sorter.process_directories(available_dirs[:5], 'CTE', share_y=True, step=2)
-            sorter.process_directories(available_dirs[:5], 'ela', scale=True, step=2)
-    
     return sorter
 
 def analyze_q3(base_path: str = None, detailed: bool = True):
-    """
-    Analyze Question 3 with solder ball comparison
-    
-    Parameters:
-    -----------
-    base_path : str
-        Base path for output directory
-    detailed : bool
-        Whether to include detailed analysis
-    """
+
     print("\n" + "="*60)
     print("QUESTION 3: SOLDER BALL CONFIGURATION ANALYSIS")
     print("="*60)
     
-    directories = ['Q3-2', 'Q3-1', 'Q3-0.5'] if detailed else ['Q3-2']
+    directories = ['Q3-0.5']
     sorter = run_question_analysis(3, directories, base_path)
-    
-    if detailed:
-        print("\nRunning mesh convergence study for Q3 with solder ball comparison...")
-        convergence_dirs = ['Q3-5', 'Q3-4', 'Q3-3', 'Q3-2', 'Q3-1', 
-                           'Q3-0.5', 'Q3-0.4', 'Q3-0.3', 'Q3-0.2']
-        
-        # Check which directories exist
-        available_dirs = []
-        for dir_name in convergence_dirs:
-            dir_path = Path(sorter.config.output_folder) / dir_name
-            if dir_path.exists():
-                available_dirs.append(dir_name)
-        
-        if available_dirs:
-            print(f"Found {len(available_dirs)} directories for convergence study")
-            sorter.process_directories(available_dirs[:5], 'CTE', share_y=True, step=3)
-            sorter.process_directories(available_dirs[:5], 'ela', scale=True, step=3)
     
     return sorter
 
@@ -1450,7 +1371,6 @@ def main():
     
     # Configuration
     base_path = None  # Use default or specify custom path
-    run_detailed = True  # Set to False for quick analysis
     
     try:
         # Example 1: Basic analysis for each question
@@ -1459,24 +1379,10 @@ def main():
             print("-"*50)
             
             # Uncomment the analyses you want to run
-            # q1_sorter = analyze_q1(base_path, detailed=False)
+            q1_sorter = analyze_q1(base_path, detailed=False)
             q2_sorter = analyze_q2(base_path, detailed=False)
-            # q3_sorter = analyze_q3(base_path, detailed=False)
-        
-        # Example 2: Detailed analysis with mesh convergence
-        if run_detailed and False:  # Set to True to enable
-            print("\n[2] Running Detailed Analysis with Mesh Convergence")
-            print("-"*50)
-            
-            # Q1 detailed analysis
-            # q1_sorter = analyze_q1(base_path, detailed=True)
-            
-            # Q2 detailed analysis
-            q2_sorter = analyze_q2(base_path, detailed=True)
-            
-            # Q3 detailed analysis
-            # q3_sorter = analyze_q3(base_path, detailed=True)
-        
+            q3_sorter = analyze_q3(base_path, detailed=False)
+
         # Example 3: Custom mesh convergence studies
         if False:  # Set to True to enable
             print("\n[3] Running Custom Mesh Convergence Studies")
@@ -1489,22 +1395,6 @@ def main():
             # Custom Q2 convergence with fine meshes
             q2_fine_dirs = ['Q2-0.1', 'Q2-0.09', 'Q2-0.08', 'Q2-0.07', 'Q2-0.05']
             # run_mesh_convergence_study(2, q2_fine_dirs)
-        
-        # Example 4: Custom configuration example
-        if False:  # Set to True to enable
-            print("\n[4] Running Custom Configuration Analysis")
-            print("-"*50)
-            
-            custom_sorter = EnhancedDataSorter(1, base_path)
-            
-            # Update visualization parameters
-            custom_sorter.update_config(
-                fontsize=9,
-                yscale=(-150000, 450000)
-            )
-            
-            # Run custom analysis
-            custom_sorter.generate_excel_and_plots(['Q1-m0.3'])
         
         print("\n" + "="*70)
         print(" "*20 + "ANALYSIS PIPELINE COMPLETED")

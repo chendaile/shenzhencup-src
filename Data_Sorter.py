@@ -346,10 +346,9 @@ class DataProcessor:
             processing_unit = []
             shapes = []
 
-            # Get all temperature values for categorization
             all_temps = sorted([float(temp) for temp in temp_data.keys()])
-            temp_categories = self._categorize_temperatures(all_temps)
-            
+            temp_categories, temp_ranges = self._categorize_temperatures(all_temps)
+
             # Process data for each temperature
             for temp_str, route_data in temp_data.items():
                 temp_val = float(temp_str)
@@ -372,14 +371,15 @@ class DataProcessor:
             all_processing_units.append(processing_unit)
             all_shapes.append(shapes)
         
-        return all_processing_units, all_shapes
+        return all_processing_units, all_shapes, temp_ranges
     
-    def _categorize_temperatures(self, temps: List[float]) -> Dict[float, str]:
+    def _categorize_temperatures(self, temps: List[float]) -> Tuple[Dict[float, str], Dict[str, Tuple[float, float]]]:
         """Categorize temperatures into 3 groups for academic visualization"""
         if not temps:
-            return {}
+            return {}, {}
         
         categories = {}
+        temp_ranges = {}
         sorted_temps = sorted(temps)
         
         if len(sorted_temps) <= 3:
@@ -404,7 +404,19 @@ class DataProcessor:
                 else:
                     categories[temp] = 'high'
         
-        return categories
+        # Calculate actual temperature ranges for each category
+        low_temps = [t for t, cat in categories.items() if cat == 'low']
+        medium_temps = [t for t, cat in categories.items() if cat == 'medium']
+        high_temps = [t for t, cat in categories.items() if cat == 'high']
+        
+        if low_temps:
+            temp_ranges['low'] = f"low:{min(low_temps)}-{max(low_temps)}degrees Celsius"
+        if medium_temps:
+            temp_ranges['medium'] = f"medium:{min(medium_temps)}-{max(medium_temps)}degrees Celsius"
+        if high_temps:
+            temp_ranges['high'] = f"high:{min(high_temps)}-{max(high_temps)}degrees Celsius"
+        
+        return categories, temp_ranges
     
     def _categorize_position(self, index: int, total_length: int) -> str:
         """Categorize position along the path"""
@@ -594,7 +606,7 @@ class Visualizer:
         
         plt.close(fig)
 
-    def plot_scatter_analysis(self, all_processing_units: List[List], all_shapes: List[List], 
+    def plot_scatter_analysis(self, all_processing_units: List[List], all_shapes: List[List], temp_map: dict,
                             duty: str, output_name: str = None, title_suffix: str = "") -> None:
         """Create academic-style scatter plot with shape-based categorization"""
         if len(all_processing_units) != 2 or len(all_shapes) != 2:
@@ -848,7 +860,7 @@ class Visualizer:
                     zorder=4)
             
             temp_regressions.append({
-                'category': temp_cat,
+                'category': temp_map[temp_cat],
                 'slope': slope,
                 'r_squared': r_squared,
                 'p_value': p_value,
@@ -1264,8 +1276,8 @@ class EnhancedDataSorter:
         """Run scatter plot analysis for specified directories"""
         print(f"Running scatter analysis for {duty_type} data...")
         for dir_name in dir_names:
-            all_processing_units, all_shapes = self.processor.get_aver_scatter(dir_name, duty_type)
-            self.visualizer.plot_scatter_analysis(all_processing_units, all_shapes, duty_type, dir_name)
+            all_processing_units, all_shapes, temp_map = self.processor.get_aver_scatter(dir_name, duty_type)
+            self.visualizer.plot_scatter_analysis(all_processing_units, all_shapes, temp_map, duty_type, dir_name)
         print(f"Scatter analysis completed for {duty_type}\n")
 
 def run_question_analysis(question: int, directories: List[str] = None) -> EnhancedDataSorter:
@@ -1323,22 +1335,6 @@ def analyze_q3():
     
     return sorter
 
-def run_mesh_convergence_study(question: int, dir_names: List[str]) -> None:
-    print(f"\n{'='*60}")
-    print(f"MESH CONVERGENCE STUDY - QUESTION {question}")
-    print(f"{'='*60}")
-    print(f"Comparing {len(dir_names)} mesh configurations...")
-    
-    sorter = EnhancedDataSorter(question)
-
-    print("\nGenerating CTE convergence plots...")
-    sorter.process_directories(dir_names, 'CTE', share_y=True, step=0)
-    
-    print("Generating Elastic Modulus convergence plots...")
-    sorter.process_directories(dir_names, 'ela', scale=True, step=0)
-    
-    print(f"Mesh convergence study completed for Question {question}\n")
-
 def main():
     print("\n" + "="*70)
     print(" "*20 + "ENHANCED DATA ANALYSIS SYSTEM")
@@ -1349,8 +1345,8 @@ def main():
         print("\n Running Basic Analysis for All Questions")
         print("-"*50)
         # q1_sorter = analyze_q1()
-        q2_sorter = analyze_q2()
-        # q3_sorter = analyze_q3()
+        # q2_sorter = analyze_q2()
+        q3_sorter = analyze_q3()
     
     print("\n" + "="*70)
     print(" "*20 + "ANALYSIS PIPELINE COMPLETED")

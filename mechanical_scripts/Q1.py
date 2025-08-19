@@ -1,6 +1,6 @@
 import os
 
-system_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output\\Q1\\Q1-0.5\\"
+system_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output\\Q1\\Q1-0.3\\"
 def solve_heat(mag, heat_system_id = 9, inter_heat_id = 3,
                         solution_id = 4, tem_id=1):
     global heat_system, heat_solution, tem

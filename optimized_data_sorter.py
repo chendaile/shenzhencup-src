@@ -33,6 +33,8 @@ class QuestionConfig:
             'Temp': 'Temperature',
             'strain': 'Diagonal Strain'
         })
+    Grid_stability_ther = defaultdict(list)
+    Grid_stability_modu = defaultdict(list)
 
     @property
     def cte_title(self) -> str:
@@ -67,12 +69,12 @@ class ConfigManager:
             fontsize=7,
             yscale=(-200000, 500000),
             name_converter={
-                'Q1-1': 'BGA 1mm Grid',
-                'Q1-2': 'BGA 2mm Grid',
-                'Q1-3': 'BGA 3mm Grid',
-                'Q1-2.5': 'BGA 2.5mm Grid',
-                'Q1-0.5': 'BGA 2.5mm Grid',
-                'Q1-1.5': 'BGA 2.5mm Grid'
+                'Q1-1': 'FQN 1mm Grid',
+                'Q1-2': 'FQN 2mm Grid',
+                'Q1-3': 'FQN 3mm Grid',
+                'Q1-2.5': 'FQN 2.5mm Grid',
+                'Q1-0.5': 'FQN 0.5mm Grid',
+                'Q1-1.5': 'FQN 1.5mm Grid'
             },
             path_names=[
                 'BGA Diagonal Path at 2mm Height', 
@@ -114,10 +116,12 @@ class ConfigManager:
             fontsize=7,
             yscale=(-200000, 300000),
             name_converter={
-                'Q2-3': 'Chip 4mm Grid',
-                'Q2-2.5': 'Chip 3.5mm Grid',
-                'Q2-0.5': 'Chip 0.5mm Grid',
-                'Q2-2': 'Chip 3mm Grid'
+                'Q2-1': 'BGA 1mm Grid',
+                'Q2-2': 'BGA 2mm Grid',
+                'Q2-3': 'BGA 3mm Grid',
+                'Q2-2.5': 'BGA 2.5mm Grid',
+                'Q2-0.5': 'BGA 0.5mm Grid',
+                'Q2-1.5': 'BGA 1.5mm Grid'
             },
             path_names=[
                 'Chip Diagonal Path at 3.57mm Height', 
@@ -159,17 +163,12 @@ class ConfigManager:
             fontsize=7,
             yscale=(-200000, 300000),
             name_converter={
-                'Q3-4': 'Chip 4mm Precision Grid',
-                'Q3-5': 'Chip 5mm Precision Grid',
-                'Q3-3': 'Chip 3mm Precision Grid',
-                'Q3-2': 'Chip 2mm Precision Grid',
-                'Q3-1.5': 'Chip 1.5mm Precision Grid',
-                'Q3-0.3': 'Chip 0.3mm Precision Grid',
-                'Q3-1': 'Chip 1mm Precision Grid',
-                'Q3-0.5': 'Chip 0.5mm Precision Grid',
-                'Q3-0.4': 'Chip 0.4mm Precision Grid',
-                'Q3-0.2': 'Chip 0.2mm Precision Grid',
-                'Q3-1.3': 'Chip 1.3mm Precision Grid'
+                'Q3-1': 'BGA 1mm Grid',
+                'Q3-2': 'BGA 2mm Grid',
+                'Q3-3': 'BGA 3mm Grid',
+                'Q3-2.5': 'BGA 2.5mm Grid',
+                'Q3-0.5': 'BGA 0.5mm Grid',
+                'Q3-1.5': 'BGA 1.5mm Grid'
             },
             path_names=[
                 'Chip Diagonal Path at 1.97mm Height', 
@@ -486,224 +485,6 @@ class Visualizer:
             'savefig.bbox': 'tight',
             'savefig.pad_inches': 0.1
         })
-    
-    def plot_stability_results(self, results: List[List], duty: str) -> None:
-        """Plot stability test results with enhanced aesthetics"""
-        if duty not in ['CTE', 'ela']:
-            raise ValueError(f"{duty} not in ['CTE', 'ela']")
-        
-        # Create figure with golden ratio proportions
-        fig, ax = plt.subplots(figsize=(10, 6.18), dpi=600)
-        
-        grid_names = self.config.grid_names
-        
-        # Define academic color palette
-        colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D']
-        markers = ['o', 's', '^', 'D']
-        
-        if self.config.question_id == 3:
-            labels = ['Solder Ball End', 'No Solder Ball End']
-            for i, result in enumerate(results):
-                ax.plot(grid_names, result, 
-                       color=colors[i % len(colors)],
-                       marker=markers[i % len(markers)],
-                       label=labels[i],
-                       linewidth=2,
-                       markersize=8,
-                       markeredgewidth=1.5,
-                       markeredgecolor='white',
-                       alpha=0.9)
-            
-            ax.legend(loc='best', frameon=True, fancybox=True, 
-                     shadow=True, framealpha=0.95, edgecolor='#CCCCCC')
-        else:
-            for i, result in enumerate(results):
-                ax.plot(grid_names, result,
-                       color=colors[i % len(colors)],
-                       marker=markers[i % len(markers)],
-                       linewidth=2,
-                       markersize=8,
-                       markeredgewidth=1.5,
-                       markeredgecolor='white',
-                       alpha=0.9)
-        
-        # Enhanced title and labels
-        ax.set_title(f'Q{self.config.question_id} Grid Refinement Stability Test', 
-                    fontsize=14, fontweight='bold', pad=20)
-        
-        ylabel = self.config.duty_names[duty]
-        ax.set_ylabel(ylabel, fontsize=12, fontweight='semibold')
-        ax.set_xlabel('Grid Size', fontsize=12, fontweight='semibold')
-        
-        # Rotate x-axis labels for better readability
-        plt.xticks(rotation=45, ha='right')
-        
-        # Add subtle grid
-        ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
-        ax.set_axisbelow(True)
-        
-        # Enhance spines
-        for spine in ['left', 'bottom']:
-            ax.spines[spine].set_linewidth(1.2)
-            ax.spines[spine].set_color('#333333')
-        
-        # Add minor ticks
-        ax.minorticks_on()
-        ax.tick_params(which='minor', length=3, width=0.5)
-        ax.tick_params(which='major', length=5, width=1.2)
-        
-        plt.tight_layout()
-        
-        output_path = Path(self.config.output_folder) / f'{ylabel.replace(" ", "_")}_grid_refinement_results.png'
-        fig.savefig(output_path, dpi=600, bbox_inches='tight')
-        plt.close(fig)
-    
-    def plot_multi_mesh_comparison(self, dir_names: List[str], duty: str, step: int,
-                                 share_y: bool = False, scale: bool = False) -> None:
-        """Plot comparison across different mesh sizes with enhanced aesthetics"""
-        if duty not in ['CTE', 'ela']:
-            raise ValueError(f"{duty} not in ['CTE', 'ela']")
-
-        # Use colorblind-friendly palette
-        colors = plt.cm.get_cmap('tab10')(np.linspace(0, 0.9, len(dir_names)))
-        
-        # Create figure with better proportions
-        fig = plt.figure(figsize=(14, 8), dpi=600)
-        
-        # Create subplots with better spacing
-        gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.25)
-        axes = [fig.add_subplot(gs[i//3, i%3]) for i in range(5)]
-        
-        # Process data for each directory
-        processor = DataProcessor(self.config)
-        global_handles, global_labels = [], []
-        local_handles = [[] for _ in range(5)]
-        local_labels = [[] for _ in range(5)]
-        
-        results = [[] for _ in range(2)]  # For stability plot
-        
-        for name_id, dir_name in enumerate(dir_names):
-            dir_path = Path(self.config.output_folder) / dir_name
-            if not dir_path.exists():
-                continue
-            
-            # Get data
-            data_list = processor.get_total_dataframes(dir_path)[duty]
-            
-            if not data_list:
-                continue
-            
-            # Average across temperatures
-            result_data = {}
-            for i, (_, output) in enumerate(data_list.items()):
-                for path_name, path_data in output.items():
-                    if i == 0:
-                        result_data[path_name] = path_data / len(data_list)
-                    else:
-                        result_data[path_name] += path_data / len(data_list)
-            
-            # Plot data with enhanced style
-            height_strs = (self.config.height_strs_cte if duty == 'CTE' 
-                          else self.config.height_strs_ela)
-            
-            for i, height_str in enumerate(height_strs):
-                if height_str not in result_data:
-                    continue
-                    
-                path_data = result_data[height_str]
-                line, = axes[i].plot(path_data, 
-                                    color=colors[name_id],
-                                    linewidth=1.8,
-                                    alpha=0.85)
-                
-                if i == 0:
-                    global_labels.append(self.config.name_converter.get(dir_name, dir_name))
-                    global_handles.append(line)
-                
-                local_handles[i].append(line)
-                local_labels[i].append(DataProcessor.calculate_variance_string(path_data))
-                
-                # Enhance subplot appearance
-                axes[i].set_title(self.config.path_names[i], fontsize=10, fontweight='semibold')
-                axes[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-                axes[i].grid(True, alpha=0.25, linestyle='--')
-                axes[i].set_axisbelow(True)
-                
-                # Enhance spines
-                for spine in ['top', 'right']:
-                    axes[i].spines[spine].set_visible(False)
-                for spine in ['left', 'bottom']:
-                    axes[i].spines[spine].set_linewidth(1)
-                    axes[i].spines[spine].set_color('#666666')
-                
-                if scale:
-                    axes[i].set_ylim(*self.config.yscale)
-            
-            # Collect data for stability plot
-            first_height_data = result_data.get(height_strs[0])
-            if first_height_data is not None:
-                if self.config.question_id == 3:
-                    if duty == 'ela':
-                        results[0].append(first_height_data.iloc[3])
-                        results[1].append(first_height_data.iloc[-4])
-                    else:
-                        results[0].append(first_height_data.iloc[0])
-                        results[1].append(first_height_data.iloc[-1])
-                else:
-                    results[0].append(first_height_data.iloc[0])
-        
-        # Add legends with better styling
-        for i in range(5):
-            if local_handles[i]:
-                legend = axes[i].legend(local_handles[i], local_labels[i], 
-                                      fontsize=7, loc='best',
-                                      frameon=True, fancybox=True,
-                                      framealpha=0.9, edgecolor='#CCCCCC')
-                legend.get_frame().set_linewidth(0.5)
-        
-        # Add global legend with better positioning
-        if global_handles:
-            global_legend = fig.legend(global_handles, global_labels, 
-                                      bbox_to_anchor=(0.98, 0.5), 
-                                      loc='center left',
-                                      fontsize=9, 
-                                      frameon=True, 
-                                      fancybox=True,
-                                      shadow=True,
-                                      framealpha=0.95,
-                                      edgecolor='#CCCCCC',
-                                      title='Mesh Configuration')
-            global_legend.get_frame().set_linewidth(0.8)
-        
-        # Set labels and title with enhanced styling
-        ylabel = self.config.duty_names[duty]
-        title = (self.config.cte_title if duty == 'CTE' else self.config.ela_title)
-        
-        fig.text(0.04, 0.5, ylabel, va='center', rotation='vertical', 
-                fontsize=12, fontweight='semibold')
-        fig.suptitle(f'Grid Refinement Study: {title}', 
-                    fontsize=14, fontweight='bold', y=0.98)
-        fig.text(0.5, 0.02, 'Node Index', ha='center', 
-                fontsize=12, fontweight='semibold')
-        
-        # Save figure with high quality
-        output_name = f'Q{self.config.question_id}-{duty}'
-        if share_y:
-            output_name += '-shareY'
-        if scale:
-            output_name += '-scale'
-        output_name += f'-STEP{step}'
-        
-        output_path = Path(self.config.output_folder) / f'{output_name}.png'
-        fig.savefig(output_path, dpi=600, bbox_inches='tight', 
-                   facecolor='white', edgecolor='none')
-        plt.close(fig)
-        
-        # Generate stability plot
-        if self.config.question_id == 3:
-            self.plot_stability_results(results, duty)
-        else:
-            self.plot_stability_results([results[0]], duty)
 
     def plot_temperature_comparison(self, data_dict: Dict, duty: str, output_path: str,
                                    scale: bool = False, share_y: bool = False) -> None:
@@ -1044,6 +825,7 @@ class Visualizer:
                 'p_value': p_value,
                 'n_points': len(cat_points)
             })
+        self._write_data(position_regressions, duty)
 
         # Perform regression for each temperature category
         temp_regressions = []
@@ -1071,7 +853,7 @@ class Visualizer:
                 'p_value': p_value,
                 'n_points': len(cat_points)
             })
-        
+
         # Overall regression with all data (duty-dependent fixed point)
         slope_all, r_squared_all, p_value_all = forced_point_regression(x_data, y_data, fixed_x=fixed_x, fixed_y=fixed_y)
         x_line = np.array([x_min_limit, x_max_limit])
@@ -1104,7 +886,6 @@ class Visualizer:
             for result in temp_regressions:
                 cat_name = result['category'].capitalize()
                 regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
-                
                 if result['r_squared'] > 0.7:  # Show slope for good fits
                     regression_text += f"    a = {result['slope']:.3e}\n"
         
@@ -1163,6 +944,263 @@ class Visualizer:
         plt.close(fig)
         
         print(f"Academic scatter plot saved: {output_file}")
+
+    def _write_data(self, pos_regressions, duty):
+        pos_regressions = [x for x in pos_regressions if 'edge' in x['category']]
+        for x in pos_regressions:
+            if duty == 'thermal':
+                self.config.Grid_stability_ther[x['category']].append(x['slope'])
+            elif duty == 'modulus':
+                self.config.Grid_stability_modu[x['category']].append(x['slope'])
+
+    def draw_stability(self, output_name: str = None):
+        """Plot grid refinement stability analysis with enhanced aesthetics"""
+        
+        # Check if there's data to plot
+        if not self.config.Grid_stability_ther and not self.config.Grid_stability_modu:
+            print("No stability data available to plot")
+            return
+        
+        # Create figure with subplots for thermal and modulus
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7), dpi=600)
+        
+        # Define color schemes based on question type
+        if self.config.question_id == 3:
+            colors = {
+                'edge_solder': '#E74C3C',       # Red
+                'edge_no_solder': '#8B0000',    # Dark red
+            }
+            markers = {
+                'edge_solder': 'o',
+                'edge_no_solder': 's',
+            }
+            linestyles = {
+                'edge_solder': '-',
+                'edge_no_solder': '-.',
+            }
+            labels = {
+                'edge_solder': 'Solder Ball Side',
+                'edge_no_solder': 'No Solder Ball Side',
+            }
+        else:
+            colors = {'edge': '#E74C3C'}
+            markers = {'edge': 'o'}
+            linestyles = {'edge': '-'}
+            labels = {'edge': 'Edge Points'}
+        
+        # Plot thermal expansion stability
+        if self.config.Grid_stability_ther:
+            for name, data in self.config.Grid_stability_ther.items():
+                if len(data) == len(self.config.grid_names):
+                    ax1.plot(self.config.grid_names, data, 
+                            color=colors.get(name, '#333333'),
+                            marker=markers.get(name, 'o'),
+                            linestyle=linestyles.get(name, '-'),
+                            label=labels.get(name, name),
+                            linewidth=2.5,
+                            markersize=10,
+                            markeredgewidth=2,
+                            markeredgecolor='white',
+                            alpha=0.9)
+                    
+                    # Add data point annotations for the last point
+                    if len(data) > 0:
+                        ax1.annotate(f'{data[-1]:.2e}', 
+                                xy=(self.config.grid_names[-1], data[-1]),
+                                xytext=(5, 5), textcoords='offset points',
+                                fontsize=7, alpha=0.7)
+            
+            # Enhance ax1 appearance
+            ax1.set_title('Thermal Expansion Coefficient Convergence', 
+                        fontsize=14, fontweight='bold', pad=15)
+            ax1.set_xlabel('Grid Size', fontsize=12, fontweight='semibold')
+            ax1.set_ylabel('CTE Slope (∂ε/∂T)', fontsize=12, fontweight='semibold')
+            ax1.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+            ax1.set_axisbelow(True)
+            
+            # Add legend
+            ax1.legend(loc='best', frameon=True, fancybox=True,
+                    shadow=True, framealpha=0.95, edgecolor='#CCCCCC',
+                    fontsize=10, title='Position', title_fontsize=11)
+            
+            # Rotate x-axis labels
+            plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45, ha='right')
+            
+            # Add minor ticks
+            ax1.minorticks_on()
+            ax1.tick_params(which='minor', length=3, width=0.5)
+            ax1.tick_params(which='major', length=5, width=1.2)
+            
+            # Style spines
+            for spine in ['top', 'right']:
+                ax1.spines[spine].set_visible(False)
+            for spine in ['left', 'bottom']:
+                ax1.spines[spine].set_linewidth(1.2)
+                ax1.spines[spine].set_color('#333333')
+            
+            # Format y-axis in scientific notation
+            ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            
+            # Add horizontal line at y=0 for reference
+            ax1.axhline(y=0, color='gray', linestyle=':', alpha=0.5, linewidth=1)
+        
+        # Plot modulus stability
+        if self.config.Grid_stability_modu:
+            for name, data in self.config.Grid_stability_modu.items():
+                if len(data) == len(self.config.grid_names):
+                    ax2.plot(self.config.grid_names, data,
+                            color=colors.get(name, '#333333'),
+                            marker=markers.get(name, 'o'),
+                            linestyle=linestyles.get(name, '-'),
+                            label=labels.get(name, name),
+                            linewidth=2.5,
+                            markersize=10,
+                            markeredgewidth=2,
+                            markeredgecolor='white',
+                            alpha=0.9)
+                    
+                    # Add data point annotations for the last point
+                    if len(data) > 0:
+                        ax2.annotate(f'{data[-1]:.2e}', 
+                                xy=(self.config.grid_names[-1], data[-1]),
+                                xytext=(5, 5), textcoords='offset points',
+                                fontsize=7, alpha=0.7)
+            
+            # Enhance ax2 appearance
+            ax2.set_title('Elastic Modulus Convergence', 
+                        fontsize=14, fontweight='bold', pad=15)
+            ax2.set_xlabel('Grid Size', fontsize=12, fontweight='semibold')
+            ax2.set_ylabel('Modulus Slope (∂σ/∂ε)', fontsize=12, fontweight='semibold')
+            ax2.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+            ax2.set_axisbelow(True)
+            
+            # Add legend
+            ax2.legend(loc='best', frameon=True, fancybox=True,
+                    shadow=True, framealpha=0.95, edgecolor='#CCCCCC',
+                    fontsize=10, title='Position', title_fontsize=11)
+            
+            # Rotate x-axis labels
+            plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha='right')
+            
+            # Add minor ticks
+            ax2.minorticks_on()
+            ax2.tick_params(which='minor', length=3, width=0.5)
+            ax2.tick_params(which='major', length=5, width=1.2)
+            
+            # Style spines
+            for spine in ['top', 'right']:
+                ax2.spines[spine].set_visible(False)
+            for spine in ['left', 'bottom']:
+                ax2.spines[spine].set_linewidth(1.2)
+                ax2.spines[spine].set_color('#333333')
+            
+            # Format y-axis in scientific notation
+            ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            
+            # Add horizontal line at y=0 for reference
+            ax2.axhline(y=0, color='gray', linestyle=':', alpha=0.5, linewidth=1)
+        
+        # Overall title
+        fig.suptitle(f'Q{self.config.question_id} Grid Refinement Convergence Analysis',
+                    fontsize=16, fontweight='bold', y=1.02)
+        
+        # Add convergence analysis text box
+        convergence_info = self._calculate_convergence_metrics()
+        if convergence_info:
+            fig.text(0.5, -0.08, convergence_info, ha='center', fontsize=9,
+                    bbox=dict(boxstyle='round,pad=0.5', facecolor='#F0F0F0',
+                            alpha=0.9, edgecolor='#666666', linewidth=1))
+        
+        # Adjust layout
+        plt.tight_layout()
+        
+        # Save figure
+        if output_name:
+            output_file = Path(self.config.output_folder) / f'{output_name}_stability_analysis.png'
+        else:
+            output_file = Path(self.config.output_folder) / f'Q{self.config.question_id}_grid_stability_analysis.png'
+        
+        fig.savefig(output_file, dpi=600, bbox_inches='tight',
+                facecolor='white', edgecolor='none', pad_inches=0.2)
+        
+        plt.close(fig)
+        print(f"Stability analysis plot saved: {output_file}")
+        
+        # Print convergence summary
+        self._print_convergence_summary()
+
+    def _calculate_convergence_metrics(self) -> str:
+        """Calculate convergence metrics for display"""
+        metrics = []
+        
+        # Analyze thermal data
+        if self.config.Grid_stability_ther:
+            for name, data in self.config.Grid_stability_ther.items():
+                if len(data) >= 2:
+                    # Calculate relative change for last two points
+                    rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
+                    converged = "✓" if rel_change < 5 else "✗"
+                    metrics.append(f"Thermal {name}: {rel_change:.1f}% change {converged}")
+        
+        # Analyze modulus data
+        if self.config.Grid_stability_modu:
+            for name, data in self.config.Grid_stability_modu.items():
+                if len(data) >= 2:
+                    rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
+                    converged = "✓" if rel_change < 5 else "✗"
+                    metrics.append(f"Modulus {name}: {rel_change:.1f}% change {converged}")
+        
+        if metrics:
+            return "Convergence Status (< 5% change = converged ✓):\n" + " | ".join(metrics)
+        return ""
+
+    def _print_convergence_summary(self):
+        """Print detailed convergence summary to console"""
+        print("\n" + "="*70)
+        print(" "*25 + "CONVERGENCE SUMMARY")
+        print("="*70)
+        
+        # Thermal expansion analysis
+        if self.config.Grid_stability_ther:
+            print("\n▶ Thermal Expansion Coefficient (∂ε/∂T):")
+            print("-"*50)
+            for name, data in self.config.Grid_stability_ther.items():
+                if len(data) > 0:
+                    print(f"\n  {name.upper()}:")
+                    print(f"    Final value: {data[-1]:.3e}")
+                    
+                    if len(data) >= 2:
+                        abs_change = data[-1] - data[-2]
+                        rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
+                        print(f"    Absolute change: {abs_change:.3e}")
+                        print(f"    Relative change: {rel_change:.2f}%")
+                        
+                        if rel_change < 5:
+                            print(f"    Status: ✓ CONVERGED")
+                        else:
+                            print(f"    Status: ✗ NOT CONVERGED")
+        
+        # Elastic modulus analysis
+        if self.config.Grid_stability_modu:
+            print("\n▶ Elastic Modulus (∂σ/∂ε):")
+            print("-"*50)
+            for name, data in self.config.Grid_stability_modu.items():
+                if len(data) > 0:
+                    print(f"\n  {name.upper()}:")
+                    print(f"    Final value: {data[-1]:.3e}")
+                    
+                    if len(data) >= 2:
+                        abs_change = data[-1] - data[-2]
+                        rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
+                        print(f"    Absolute change: {abs_change:.3e}")
+                        print(f"    Relative change: {rel_change:.2f}%")
+                        
+                        if rel_change < 5:
+                            print(f"    Status: ✓ CONVERGED")
+                        else:
+                            print(f"    Status: ✗ NOT CONVERGED")
+        
+        print("\n" + "="*70 + "\n")
 
 class EnhancedDataSorter:
     """Main class that orchestrates data processing and visualization"""
@@ -1237,7 +1275,7 @@ def run_question_analysis(question: int, directories: List[str] = None,
     
     if directories:
         # Generate Excel and basic plots
-        # sorter.generate_excel_and_plots(directories)
+        sorter.generate_excel_and_plots(directories)
         
         # Generate scatter plots if requested
         if include_scatter:
@@ -1246,6 +1284,7 @@ def run_question_analysis(question: int, directories: List[str] = None,
             sorter.run_scatter_analysis(directories, 'thermal')
             # Modulus scatter plot
             sorter.run_scatter_analysis(directories, 'modulus')
+    sorter.visualizer.draw_stability()
     
     print(f"Analysis completed for Question {question}")
     print(f"=" * 60 + "\n")
@@ -1270,7 +1309,7 @@ def analyze_q2(base_path: str = None, detailed: bool = True):
     print("QUESTION 2: CHIP PRECISION GRID ANALYSIS")
     print("="*60)
     
-    directories = ['Q2-0.5']
+    directories = ['Q2-3', 'Q2-2.5', 'Q2-2', 'Q2-1.5', 'Q2-1','Q2-0.5']
     sorter = run_question_analysis(2, directories, base_path)
     
     return sorter
@@ -1281,7 +1320,7 @@ def analyze_q3(base_path: str = None, detailed: bool = True):
     print("QUESTION 3: SOLDER BALL CONFIGURATION ANALYSIS")
     print("="*60)
     
-    directories = ['Q3-0.5']
+    directories = ['Q3-3', 'Q3-2.5', 'Q3-2', 'Q3-1.5', 'Q3-1','Q3-0.5']
     sorter = run_question_analysis(3, directories, base_path)
     
     return sorter
@@ -1312,21 +1351,9 @@ def main():
     if True:  # Set to False to skip
         print("\n Running Basic Analysis for All Questions")
         print("-"*50)
-        q1_sorter = analyze_q1(None, detailed=False)
+        # q1_sorter = analyze_q1(None, detailed=False)
         # q2_sorter = analyze_q2(None, detailed=False)
-        # q3_sorter = analyze_q3(None, detailed=False)
-
-    if False:  # Set to True to enable
-        print("\n Running Custom Mesh Convergence Studies")
-        print("-"*50)
-        
-        # Custom Q1 convergence
-        q1_custom_dirs = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1', 'Q1-0.5']
-        run_mesh_convergence_study(1, q1_custom_dirs)
-        
-        # Custom Q2 convergence with fine meshes
-        # q2_fine_dirs = ['Q2-0.1', 'Q2-0.09', 'Q2-0.08', 'Q2-0.07', 'Q2-0.05']
-        # run_mesh_convergence_study(2, q2_fine_dirs)
+        q3_sorter = analyze_q3(None, detailed=False)
     
     print("\n" + "="*70)
     print(" "*20 + "ANALYSIS PIPELINE COMPLETED")

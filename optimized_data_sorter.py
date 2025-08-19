@@ -7,6 +7,10 @@ import matplotlib.cm as cm
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional
 from pathlib import Path
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
+from collections import defaultdict
+from scipy.stats import t
 
 @dataclass
 class QuestionConfig:
@@ -794,37 +798,21 @@ class Visualizer:
         """Create academic-style scatter plot with shape-based categorization"""
         if len(all_processing_units) != 2 or len(all_shapes) != 2:
             raise ValueError("Expected exactly 2 processing units and 2 shape lists")
+
+        x_data = all_processing_units[1]
+        y_data = all_processing_units[0] 
+        shapes_data = all_shapes[0] 
         
-        # Extract data
-        x_data = all_processing_units[1]  # Second list for x-axis
-        y_data = all_processing_units[0]  # First list for y-axis
-        shapes_data = all_shapes[0]  # Shape categories
-        
-        # Verify data consistency
         if len(x_data) != len(y_data) or len(shapes_data) != len(x_data):
             raise ValueError("Data lengths don't match")
         
-        # Create figure with publication-quality style
         plt.style.use('seaborn-v0_8-whitegrid')
-        fig, ax = plt.subplots(figsize=(12, 8), dpi=300)  # Increased width for better legend placement
+        fig, ax = plt.subplots(figsize=(12, 8), dpi=600) 
         
-        # Define marker styles for different categories - simplified to 3 temperature categories
         temp_markers = {
             'low': 'o',      # Circle
             'medium': 's',   # Square
-            'high': '^',     # Triangle
-            'Q1': 'o',       # Map quartiles to 3 categories
-            'Q2': 's', 
-            'Q3': 's',       # Q2 and Q3 both use square
-            'Q4': '^'
-        }
-        
-        # Simplify temperature categories to just 3
-        simplified_temp_map = {
-            'Q1': 'low',
-            'Q2': 'medium',
-            'Q3': 'medium',
-            'Q4': 'high'
+            'high': '^'     # Triangle
         }
         
         pos_colors = {
@@ -833,56 +821,7 @@ class Visualizer:
             'intermediate': "#C3F449", # Gray for intermediate
             'single': '#2ECC71'      # Green for single point
         }
-        
-        # Group data by categories for efficient plotting
-        from collections import defaultdict
-        grouped_data = defaultdict(list)
-        
-        # Simplify temperature categories and regroup data
-        for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
-            # Simplify temperature category
-            if temp_cat in simplified_temp_map:
-                temp_cat = simplified_temp_map[temp_cat]
-            grouped_data[(temp_cat, pos_cat)].append((x, y))
-        
-        # Plot each group with appropriate style
-        plotted_temp_cats = set()
-        plotted_pos_cats = set()
-        
-        for (temp_cat, pos_cat), points in grouped_data.items():
-            if not points:
-                continue
-                
-            xs, ys = zip(*points)
-            marker = temp_markers.get(temp_cat, 'o')
-            color = pos_colors.get(pos_cat, "#7FD5DC")
-            
-            # Plot with enhanced style
-            ax.scatter(xs, ys, 
-                      marker=marker,
-                      c=color,
-                      s=80,  # Slightly larger markers
-                      alpha=0.7,
-                      edgecolors='black',
-                      linewidth=0.8,
-                      zorder=5)
-            
-            # Track categories for legend
-            plotted_temp_cats.add(temp_cat)
-            plotted_pos_cats.add(pos_cat)
-        
-        # Create custom legend
-        from matplotlib.patches import Patch
-        from matplotlib.lines import Line2D
-        
-        # Temperature category legend elements (simplified to 3)
-        temp_legend = []
-        temp_labels = {
-            'low': 'Low Temp.',
-            'medium': 'Med. Temp.',
-            'high': 'High Temp.'
-        }
-        # Regression line styles
+
         position_styles = {
             'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
             'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
@@ -895,7 +834,39 @@ class Visualizer:
             'high': {'color': '#8E44AD', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2}
         }
         
-        for cat in ['low', 'medium', 'high']:  # Fixed order
+        grouped_data = defaultdict(list)
+        for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
+            grouped_data[(temp_cat, pos_cat)].append((x, y))
+        
+        # Plot each group with appropriate style
+        plotted_temp_cats = set()
+        plotted_pos_cats = set()
+        
+        for (temp_cat, pos_cat), points in grouped_data.items():
+            xs, ys = zip(*points)
+            marker = temp_markers[temp_cat]
+            color = pos_colors[pos_cat]
+            
+            ax.scatter(xs, ys, 
+                      marker=marker,
+                      c=color,
+                      s=80,  # Slightly larger markers
+                      alpha=0.7,
+                      edgecolors='black',
+                      linewidth=0.8,
+                      zorder=5)
+            plotted_temp_cats.add(temp_cat)
+            plotted_pos_cats.add(pos_cat)
+        
+        # Temperature category legend elements
+        temp_legend = []
+        temp_labels = {
+            'low': 'Low Temp.',
+            'medium': 'Med. Temp.',
+            'high': 'High Temp.'
+        }
+        
+        for cat in ['low', 'medium', 'high']:
             if cat in plotted_temp_cats:
                 temp_legend.append(Line2D([0], [0], 
                           marker=temp_markers[cat],
@@ -914,35 +885,23 @@ class Visualizer:
             'intermediate': 'Intermediate',
             'single': 'Single Point'
         }
-        for cat in ['edge', 'center', 'intermediate', 'single']:  # Fixed order
+        for cat in ['edge', 'center', 'intermediate', 'single']:
             if cat in plotted_pos_cats:
                 pos_legend.append(Patch(facecolor=pos_colors[cat], 
                                        edgecolor='black', linewidth=0.8,
-                                       label=pos_labels.get(cat, cat.capitalize())))
+                                       label=pos_labels[cat]))
         
-        # Calculate data range for better legend positioning and axis limits
         x_range = max(x_data) - min(x_data)
         y_range = max(y_data) - min(y_data)
-        x_margin = x_range * 0.15  # Increased margin to show extended regression lines
-        y_margin = y_range * 0.15
-        
-        # Set axis limits with larger margins, ensuring origin and regression lines are visible
-        x_min_limit = min(x_data) - x_range*0.5  # Match regression line extent
+
+        x_min_limit = min(x_data) - x_range*0.5 
         x_max_limit = max(x_data) + x_range*0.5
-        
-        # Calculate y limits based on regression lines
-        y_values_at_limits = []
-        if 'slope_all' in locals():
-            y_values_at_limits.extend([slope_all * x_min_limit, slope_all * x_max_limit])
-        
-        y_min_limit = min(min(y_data) - y_margin, min(y_values_at_limits) if y_values_at_limits else 0)
-        y_max_limit = max(max(y_data) + y_margin, max(y_values_at_limits) if y_values_at_limits else max(y_data))
+        y_min_limit = min(y_data) - y_range*0.2 
+        y_max_limit = max(y_data) + y_range*0.2
         
         ax.set_xlim(x_min_limit, x_max_limit)
         ax.set_ylim(y_min_limit, y_max_limit)
         
-        # Add both legends in upper left corner
-        # Temperature legend
         legend1 = ax.legend(handles=temp_legend, 
                           loc='upper left',
                           bbox_to_anchor=(0.02, 0.98),
@@ -960,7 +919,6 @@ class Visualizer:
                           handletextpad=0.8)
         ax.add_artist(legend1)
         
-        # Position legend below temperature legend
         legend2 = ax.legend(handles=pos_legend, 
                           loc='upper left',
                           bbox_to_anchor=(0.02, 0.78),
@@ -977,11 +935,6 @@ class Visualizer:
                           columnspacing=1.2,
                           handletextpad=0.8)
         
-        # Perform comprehensive regression analysis with duty-dependent fixed point
-        from scipy import stats
-        import numpy as np
-        
-        # Determine fixed point based on duty
         if duty == 'thermal':
             fixed_x = 25.0  # For temperature, force through (25, 0)
             fixed_y = 0.0
@@ -989,16 +942,13 @@ class Visualizer:
             fixed_x = 0.0   # For modulus or others, force through (0, 0)
             fixed_y = 0.0
         
-        # Function to perform regression forcing through (fixed_x, fixed_y)
         def forced_point_regression(x, y, fixed_x=0.0, fixed_y=0.0):
             """Perform linear regression forcing through a fixed point"""
             x = np.array(x)
             y = np.array(y)
             dx = x - fixed_x
             dy = y - fixed_y
-            # Slope m = sum(dx * dy) / sum(dx ** 2)
             slope = np.sum(dx * dy) / np.sum(dx ** 2)
-            # Predicted y = slope * dx + fixed_y
             y_pred = slope * dx + fixed_y
             # R-squared
             ss_res = np.sum((y - y_pred) ** 2)
@@ -1009,120 +959,69 @@ class Visualizer:
             if n > 2:
                 se = np.sqrt(ss_res / (n - 1))
                 t_stat = slope / (se / np.sqrt(np.sum(dx ** 2)))
-                from scipy.stats import t
+
                 p_value = 2 * (1 - t.cdf(abs(t_stat), n - 1))
             else:
                 p_value = np.nan
             return slope, r_squared, p_value
         
-        # Prepare data by categories for regression
-        position_data = defaultdict(list)
-        temp_data = defaultdict(list)
-        combined_data = defaultdict(list)
-        
-        # Reorganize with simplified temperature categories
-        for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
-            # Simplify temperature category
-            if temp_cat in simplified_temp_map:
-                temp_cat = simplified_temp_map[temp_cat]
-            
-            position_data[pos_cat].append((x, y))
-            temp_data[temp_cat].append((x, y))
-            combined_data[(temp_cat, pos_cat)].append((x, y))
-        
-        # Store regression results
-        position_regressions = []
-        temp_regressions = []
-        
         # Perform regression for each position category
+        position_regressions = []
         for pos_cat in ['edge', 'center', 'intermediate']:
-            if pos_cat not in position_data or len(position_data[pos_cat]) < 2:
-                continue
-            
-            cat_points = position_data[pos_cat]
+            cat_points = [point for key in grouped_data if key[1] == pos_cat for point in grouped_data[key]]
             cat_x, cat_y = zip(*cat_points)
-            
-            if len(set(cat_x)) < 2:
-                continue
-            
-            try:
-                slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
-                
-                # Plot regression line with extended range
-                # Extend range significantly to ensure visibility
-                length = max(x_data) - min(x_data)
-                x_min = min(x_data) - length*2
-                x_max = max(x_data) + length*2
-                x_range = np.array([x_min, x_max])
-                y_range = slope * (x_range - fixed_x) + fixed_y
-                
-                style = position_styles.get(pos_cat, position_styles['intermediate'])
-                ax.plot(x_range, y_range, 
-                       color=style['color'],
-                       linestyle=style['linestyle'],
-                       alpha=style['alpha'],
-                       linewidth=style['linewidth'],
-                       zorder=4)
-                
-                position_regressions.append({
-                    'category': pos_cat,
-                    'slope': slope,
-                    'r_squared': r_squared,
-                    'p_value': p_value,
-                    'n_points': len(cat_points)
-                })
-            except:
-                continue
-        
-        # Perform regression for each temperature category
-        for temp_cat in ['low', 'medium', 'high']:
-            if temp_cat not in temp_data or len(temp_data[temp_cat]) < 2:
-                continue
-            
-            cat_points = temp_data[temp_cat]
-            cat_x, cat_y = zip(*cat_points)
-            
-            if len(set(cat_x)) < 2:
-                continue
-            
-            try:
-                slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
-                
-                # Plot regression line with extended range
-                # Extend range significantly to ensure visibility
-                length = max(x_data) - min(x_data)
-                x_min = min(x_data) - length*2
-                x_max = max(x_data) + length*2
 
-                x_range = np.array([x_min, x_max])
-                y_range = slope * (x_range - fixed_x) + fixed_y
-                
-                style = temp_styles.get(temp_cat, temp_styles['medium'])
-                ax.plot(x_range, y_range, 
-                       color=style['color'],
-                       linestyle=style['linestyle'],
-                       alpha=style['alpha'],
-                       linewidth=style['linewidth'],
-                       zorder=4)
-                
-                temp_regressions.append({
-                    'category': temp_cat,
-                    'slope': slope,
-                    'r_squared': r_squared,
-                    'p_value': p_value,
-                    'n_points': len(cat_points)
-                })
-            except:
-                continue
+            slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
+        
+            x_range = np.array([x_min_limit, x_max_limit])
+            y_range = slope * (x_range - fixed_x) + fixed_y
+            
+            style = position_styles[pos_cat]
+            ax.plot(x_range, y_range, 
+                    color=style['color'],
+                    linestyle=style['linestyle'],
+                    alpha=style['alpha'],
+                    linewidth=style['linewidth'],
+                    zorder=4)
+            
+            position_regressions.append({
+                'category': pos_cat,
+                'slope': slope,
+                'r_squared': r_squared,
+                'p_value': p_value,
+                'n_points': len(cat_points)
+            })
+
+        # Perform regression for each temperature category
+        temp_regressions = []
+        for temp_cat in ['low', 'medium', 'high']:
+            cat_points = [point for key in grouped_data if key[0] == temp_cat for point in grouped_data[key]]
+            cat_x, cat_y = zip(*cat_points)
+
+            slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
+        
+            x_range = np.array([x_min_limit, x_max_limit])
+            y_range = slope * (x_range - fixed_x) + fixed_y
+            
+            style = temp_styles[temp_cat]
+            ax.plot(x_range, y_range, 
+                    color=style['color'],
+                    linestyle=style['linestyle'],
+                    alpha=style['alpha'],
+                    linewidth=style['linewidth'],
+                    zorder=4)
+            
+            temp_regressions.append({
+                'category': temp_cat,
+                'slope': slope,
+                'r_squared': r_squared,
+                'p_value': p_value,
+                'n_points': len(cat_points)
+            })
         
         # Overall regression with all data (duty-dependent fixed point)
         slope_all, r_squared_all, p_value_all = forced_point_regression(x_data, y_data, fixed_x=fixed_x, fixed_y=fixed_y)
-        
-        # Plot overall regression line with extended range
-        length = max(x_data) - min(x_data)
-        x_min = min(x_data) - length*0.5
-        x_max = max(x_data) + length*0.5
-        x_line = np.array([x_min, x_max])
+        x_line = np.array([x_min_limit, x_max_limit])
         y_line = slope_all * (x_line - fixed_x) + fixed_y
         ax.plot(x_line, y_line, 'k-', alpha=0.9, linewidth=3.0, 
                zorder=3)
@@ -1387,40 +1286,34 @@ def main():
     # Configuration
     base_path = None  # Use default or specify custom path
     
-    try:
-        # Example 1: Basic analysis for each question
-        if True:  # Set to False to skip
-            print("\n[1] Running Basic Analysis for All Questions")
-            print("-"*50)
-            
-            # Uncomment the analyses you want to run
-            q1_sorter = analyze_q1(base_path, detailed=False)
-            q2_sorter = analyze_q2(base_path, detailed=False)
-            q3_sorter = analyze_q3(base_path, detailed=False)
+    # Example 1: Basic analysis for each question
+    if True:  # Set to False to skip
+        print("\n[1] Running Basic Analysis for All Questions")
+        print("-"*50)
+        
+        # Uncomment the analyses you want to run
+        q1_sorter = analyze_q1(base_path, detailed=False)
+        q2_sorter = analyze_q2(base_path, detailed=False)
+        q3_sorter = analyze_q3(base_path, detailed=False)
 
-        # Example 3: Custom mesh convergence studies
-        if False:  # Set to True to enable
-            print("\n[3] Running Custom Mesh Convergence Studies")
-            print("-"*50)
-            
-            # Custom Q1 convergence
-            q1_custom_dirs = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1', 'Q1-0.5']
-            run_mesh_convergence_study(1, q1_custom_dirs)
-            
-            # Custom Q2 convergence with fine meshes
-            # q2_fine_dirs = ['Q2-0.1', 'Q2-0.09', 'Q2-0.08', 'Q2-0.07', 'Q2-0.05']
-            # run_mesh_convergence_study(2, q2_fine_dirs)
+    # Example 3: Custom mesh convergence studies
+    if False:  # Set to True to enable
+        print("\n[3] Running Custom Mesh Convergence Studies")
+        print("-"*50)
         
-        print("\n" + "="*70)
-        print(" "*20 + "ANALYSIS PIPELINE COMPLETED")
-        print(" "*15 + "All outputs saved to configured directories")
-        print("="*70 + "\n")
+        # Custom Q1 convergence
+        q1_custom_dirs = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1', 'Q1-0.5']
+        run_mesh_convergence_study(1, q1_custom_dirs)
         
-    except Exception as e:
-        print(f"\n[ERROR] Analysis failed: {str(e)}")
-        print("Please check your data directories and configuration.")
-        import traceback
-        traceback.print_exc()
+        # Custom Q2 convergence with fine meshes
+        # q2_fine_dirs = ['Q2-0.1', 'Q2-0.09', 'Q2-0.08', 'Q2-0.07', 'Q2-0.05']
+        # run_mesh_convergence_study(2, q2_fine_dirs)
+    
+    print("\n" + "="*70)
+    print(" "*20 + "ANALYSIS PIPELINE COMPLETED")
+    print(" "*15 + "All outputs saved to configured directories")
+    print("="*70 + "\n")
+    
 
 if __name__ == "__main__":
     main()

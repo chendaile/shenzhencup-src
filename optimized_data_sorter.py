@@ -1090,7 +1090,7 @@ class Visualizer:
         if position_regressions:
             regression_text += "▶ Average temp By Position(solid lines):\n"
             for result in position_regressions:
-                cat_name = result['category'].capitalize()[:6]
+                cat_name = result['category'].capitalize()
                 regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
                 if result['r_squared'] > 0.7:  # Show slope for good fits
                     regression_text += f"    a = {result['slope']:.3e}\n"

@@ -1139,19 +1139,22 @@ class Visualizer:
                 if len(data) >= 2:
                     # Calculate relative change for last two points
                     rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
-                    converged = "✓" if rel_change < 5 else "✗"
-                    metrics.append(f"Thermal {name}: {rel_change:.1f}% change {converged}")
+                    converged = "[CONVERGED]" if rel_change < 5 else "[NOT CONVERGED]"
+                    label_name = name.replace('_', ' ').title()
+                    metrics.append(f"Thermal {label_name}: {rel_change:.1f}% {converged}")
         
         # Analyze modulus data
         if self.config.Grid_stability_modu:
             for name, data in self.config.Grid_stability_modu.items():
                 if len(data) >= 2:
                     rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
-                    converged = "✓" if rel_change < 5 else "✗"
-                    metrics.append(f"Modulus {name}: {rel_change:.1f}% change {converged}")
+                    converged = "[CONVERGED]" if rel_change < 5 else "[NOT CONVERGED]"
+                    label_name = name.replace('_', ' ').title()
+                    metrics.append(f"Modulus {label_name}: {rel_change:.1f}% {converged}")
         
         if metrics:
-            return "Convergence Status (< 5% change = converged ✓):\n" + " | ".join(metrics)
+            header = "Convergence Criteria: < 5% relative change between last two grids\n"
+            return header + "\n".join(metrics)
         return ""
 
     def _print_convergence_summary(self):
@@ -1162,11 +1165,12 @@ class Visualizer:
         
         # Thermal expansion analysis
         if self.config.Grid_stability_ther:
-            print("\n▶ Thermal Expansion Coefficient (∂ε/∂T):")
+            print("\n>>> Thermal Expansion Coefficient (dε/dT):")
             print("-"*50)
             for name, data in self.config.Grid_stability_ther.items():
                 if len(data) > 0:
-                    print(f"\n  {name.upper()}:")
+                    label_name = name.replace('_', ' ').upper()
+                    print(f"\n  {label_name}:")
                     print(f"    Final value: {data[-1]:.3e}")
                     
                     if len(data) >= 2:
@@ -1176,17 +1180,18 @@ class Visualizer:
                         print(f"    Relative change: {rel_change:.2f}%")
                         
                         if rel_change < 5:
-                            print(f"    Status: ✓ CONVERGED")
+                            print(f"    Status: [CONVERGED]")
                         else:
-                            print(f"    Status: ✗ NOT CONVERGED")
+                            print(f"    Status: [NOT CONVERGED]")
         
         # Elastic modulus analysis
         if self.config.Grid_stability_modu:
-            print("\n▶ Elastic Modulus (∂σ/∂ε):")
+            print("\n>>> Elastic Modulus (dσ/dε):")
             print("-"*50)
             for name, data in self.config.Grid_stability_modu.items():
                 if len(data) > 0:
-                    print(f"\n  {name.upper()}:")
+                    label_name = name.replace('_', ' ').upper()
+                    print(f"\n  {label_name}:")
                     print(f"    Final value: {data[-1]:.3e}")
                     
                     if len(data) >= 2:
@@ -1196,9 +1201,9 @@ class Visualizer:
                         print(f"    Relative change: {rel_change:.2f}%")
                         
                         if rel_change < 5:
-                            print(f"    Status: ✓ CONVERGED")
+                            print(f"    Status: [CONVERGED]")
                         else:
-                            print(f"    Status: ✗ NOT CONVERGED")
+                            print(f"    Status: [NOT CONVERGED]")
         
         print("\n" + "="*70 + "\n")
 
@@ -1263,27 +1268,22 @@ class EnhancedDataSorter:
         print(f"Scatter analysis completed for {duty_type}\n")
 
 def run_question_analysis(question: int, directories: List[str] = None, 
-                         base_path: str = None, include_scatter: bool = True) -> EnhancedDataSorter:
+                         base_path: str = None) -> EnhancedDataSorter:
     if base_path is None:
         base_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output"
-    
     print(f"=" * 60)
     print(f"Starting Analysis for Question {question}")
     print(f"=" * 60)
     
     sorter = EnhancedDataSorter(question, base_path)
-    
-    if directories:
-        # Generate Excel and basic plots
-        sorter.generate_excel_and_plots(directories)
-        
-        # Generate scatter plots if requested
-        if include_scatter:
-            print("Generating scatter plot analyses...")
-            # Thermal scatter plot
-            sorter.run_scatter_analysis(directories, 'thermal')
-            # Modulus scatter plot
-            sorter.run_scatter_analysis(directories, 'modulus')
+    sorter.generate_excel_and_plots(directories)
+    print("Generating scatter plot analyses...")
+
+    # Thermal scatter plot
+    sorter.run_scatter_analysis(directories, 'thermal')
+    # Modulus scatter plot
+    sorter.run_scatter_analysis(directories, 'modulus')
+
     sorter.visualizer.draw_stability()
     
     print(f"Analysis completed for Question {question}")
@@ -1291,8 +1291,7 @@ def run_question_analysis(question: int, directories: List[str] = None,
     
     return sorter
 
-# Specific analysis functions for each question
-def analyze_q1(base_path: str = None, detailed: bool = True):
+def analyze_q1(base_path: str = None):
 
     print("\n" + "="*60)
     print("QUESTION 1: BGA GRID REFINEMENT ANALYSIS")
@@ -1303,7 +1302,7 @@ def analyze_q1(base_path: str = None, detailed: bool = True):
     
     return sorter
 
-def analyze_q2(base_path: str = None, detailed: bool = True):
+def analyze_q2(base_path: str = None):
 
     print("\n" + "="*60)
     print("QUESTION 2: CHIP PRECISION GRID ANALYSIS")
@@ -1314,7 +1313,7 @@ def analyze_q2(base_path: str = None, detailed: bool = True):
     
     return sorter
 
-def analyze_q3(base_path: str = None, detailed: bool = True):
+def analyze_q3(base_path: str = None):
 
     print("\n" + "="*60)
     print("QUESTION 3: SOLDER BALL CONFIGURATION ANALYSIS")
@@ -1325,8 +1324,7 @@ def analyze_q3(base_path: str = None, detailed: bool = True):
     
     return sorter
 
-def run_mesh_convergence_study(question: int, dir_names: List[str], 
-                               output_suffix: str = "") -> None:
+def run_mesh_convergence_study(question: int, dir_names: List[str]) -> None:
     print(f"\n{'='*60}")
     print(f"MESH CONVERGENCE STUDY - QUESTION {question}")
     print(f"{'='*60}")
@@ -1348,11 +1346,11 @@ def main():
     print(" "*15 + "Academic Publication Quality Output")
     print("="*70)
 
-    if True:  # Set to False to skip
+    if True: 
         print("\n Running Basic Analysis for All Questions")
         print("-"*50)
-        # q1_sorter = analyze_q1(None, detailed=False)
-        # q2_sorter = analyze_q2(None, detailed=False)
+        q1_sorter = analyze_q1(None, detailed=False)
+        q2_sorter = analyze_q2(None, detailed=False)
         q3_sorter = analyze_q3(None, detailed=False)
     
     print("\n" + "="*70)

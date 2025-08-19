@@ -698,7 +698,7 @@ class Visualizer:
         colors = plt.cm.coolwarm(norm(temps))
         
         # Create figure with optimal layout
-        fig = plt.figure(figsize=(14, 8), dpi=300)
+        fig = plt.figure(figsize=(14, 8), dpi=600)
         gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.25)
         axes = [fig.add_subplot(gs[i//3, i%3]) for i in range(5)]
         
@@ -824,7 +824,7 @@ class Visualizer:
         pos_colors = {
             'edge': '#E74C3C',       # Red for edges
             'center': '#3498DB',     # Blue for center
-            'intermediate': '#95A5A6', # Gray for intermediate
+            'intermediate': "#C3F449", # Gray for intermediate
             'single': '#2ECC71'      # Green for single point
         }
         
@@ -849,7 +849,7 @@ class Visualizer:
                 
             xs, ys = zip(*points)
             marker = temp_markers.get(temp_cat, 'o')
-            color = pos_colors.get(pos_cat, '#95A5A6')
+            color = pos_colors.get(pos_cat, "#7FD5DC")
             
             # Plot with enhanced style
             ax.scatter(xs, ys, 
@@ -904,8 +904,8 @@ class Visualizer:
         y_margin = y_range * 0.15
         
         # Set axis limits with larger margins, ensuring origin and regression lines are visible
-        x_min_limit = min(min(x_data) * 0.7, 0)  # Match regression line extent
-        x_max_limit = max(x_data) * 1.3
+        x_min_limit = min(x_data) - x_range*0.5  # Match regression line extent
+        x_max_limit = max(x_data) + x_range*0.5
         
         # Calculate y limits based on regression lines
         y_values_at_limits = []
@@ -1000,7 +1000,7 @@ class Visualizer:
         position_styles = {
             'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
             'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
-            'intermediate': {'color': '#95A5A6', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2}
+            'intermediate': {'color': "#C3F449", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2}
         }
         
         temp_styles = {
@@ -1029,8 +1029,9 @@ class Visualizer:
                 
                 # Plot regression line with extended range
                 # Extend range significantly to ensure visibility
-                x_min = min(min(cat_x) * 0.7, min(x_data) * 0.7, 0)  
-                x_max = max(max(cat_x) * 1.3, max(x_data) * 1.3)
+                length = max(x_data) - min(x_data)
+                x_min = min(x_data) - length*2
+                x_max = max(x_data) + length*2
                 x_range = np.array([x_min, x_max])
                 y_range = slope * x_range
                 
@@ -1068,8 +1069,10 @@ class Visualizer:
                 
                 # Plot regression line with extended range
                 # Extend range significantly to ensure visibility
-                x_min = min(min(cat_x) * 0.7, min(x_data) * 0.7, 0)  
-                x_max = max(max(cat_x) * 1.3, max(x_data) * 1.3)
+                length = max(x_data) - min(x_data)
+                x_min = min(x_data) - length*2
+                x_max = max(x_data) + length*2
+
                 x_range = np.array([x_min, x_max])
                 y_range = slope * x_range
                 
@@ -1095,8 +1098,9 @@ class Visualizer:
         slope_all, r_squared_all, p_value_all = zero_intercept_regression(x_data, y_data)
         
         # Plot overall regression line with extended range
-        x_min = min(min(x_data) * 0.7, 0)  
-        x_max = max(x_data) * 1.3
+        length = max(x_data) - min(x_data)
+        x_min = min(x_data) - length*0.5
+        x_max = max(x_data) + length*0.5
         x_line = np.array([x_min, x_max])
         y_line = slope_all * x_line
         ax.plot(x_line, y_line, 'k-', alpha=0.9, linewidth=3.0, 

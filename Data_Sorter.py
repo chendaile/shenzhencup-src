@@ -4,413 +4,1359 @@ import csv
 import os
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from dataclasses import dataclass, field
+from typing import Dict, List, Tuple, Optional
+from pathlib import Path
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
+from collections import defaultdict
+from scipy.stats import t
 
-class Data_Sorter():
-    def __init__(self, question=1):
-        self.question = question
-        if self.question == 1:
-            self.initpath = os.path.join("C:\\Users\\oft\\Documents\\ShenZhenCup\\output", 'Q1')
-            self.fontsize = 5
-            self.yscale = (-200000, 500000)
-            self.name_converter = {
-                'Q1v0-b2_1' : 'BGA0.5mm分割',
-                'Q1v1-b3_2' : 'BGA0.5mm分割',
-                'Q1v2-b4_3' : 'BGA0.5mm分割',
-                'Q1v3-m0.7' : 'BGA0.7mm分割',
-                'Q1v4-m0.3' : 'BGA0.3mm分割',
-                'Q1v5-m1' : 'BGA1mm分割',
-                'Q1v6-b1_1': 'PCB1mm分割-BGA0.5mm分割',
-                'Q1v7-m0.4': 'BGA0.4mm分割',
-                'Q1v8-s0.2': 'PCB4mm分割-BGA0.3mm分割-焊球0.2分割',
-                'Q1v9-s0.1': 'PCB4mm分割-BGA0.3mm分割-焊球0.1分割',
-                'Q1v10-s0.3': 'PCB4mm分割-BGA0.3mm分割-焊球0.3分割',
-                'Q1-m1': 'BGA1mm分割',
-                'Q1-m0.7': 'BGA0.7mm分割',
-                'Q1-m0.5': 'BGA0.5mm分割',
-                'Q1-m0.2': 'BGA0.2mm分割',
-                'Q1-m2.5': 'BGA2.5mm分割',
-                'Q1-m2': 'BGA2mm分割',
-                'Q1-m1.5': 'BGA1.5mm分割',
-                'Q1-m0.3': 'BGA0.3mm分割'
-            }
-            self.path_names = ['BGA2mm高度处对角线线路', 'BGA1.5mm高度处对角线线路', 
-                'BGA1mm高度处对角线线路', 'BGA0.5mm高度处对角线线路', 'BGA角点处2mm至0mm竖直线路']
-            self.exchange_char = {'h0':'-height-2mm',
-                    'h1':'-height-1.5mm',
-                    'h2':'-height-1mm',
-                    'h3':'-height-0.5mm',
-                    'v0':'-height-0mm_to_2mm'}
-            self.CTE_title = 'Q1CTE热膨胀系数在不同BGA高度上以及角点处竖直线路上的变化'
-            self.ela_title = 'Q1拉伸模量在不同BGA高度上以及角点处竖直线路上的变化'
-            self.height_strs_cte = ['CTE-Path-height-2mm', 'CTE-Path-height-1.5mm', 
-                'CTE-Path-height-1mm', 'CTE-Path-height-0.5mm', 'CTE-Path-height-0mm_to_2mm']
-            self.height_strs_ela = ['ela-Path-height-2mm', 'ela-Path-height-1.5mm', 
-                    'ela-Path-height-1mm', 'ela-Path-height-0.5mm', 'ela-Path-height-0mm_to_2mm']
-            
-        elif self.question ==2:
-            self.initpath = os.path.join("C:\\Users\\oft\\Documents\\ShenZhenCup\\output", 'Q2')
-            self.fontsize = 4
-            self.yscale = (-200000, 300000)
-            self.name_converter = {
-                'Q2v0-4' : '芯片4mm精度分割',
-                'Q2v0-3.5' : '芯片3.5mm精度分割',
-                'Q2v0-3' : '芯片3mm精度分割',
-                'Q2v0-2.5' : '芯片2.5mm精度分割',
-                'Q2v0-2' : '芯片2mm精度分割',
-                'Q2v0-1' : '芯片1mm精度分割',
-                'Q2v0-1.5' : '芯片1.5mm精度分割',
-                'Q2v0-0.5' : '芯片0.5mm精度分割',
-                'Q2v0-0.2' : '芯片0.2mm精度分割',
-                'Q2v0-0.1' : '芯片0.1mm精度分割',
-                'Q2v0-0.09' : '芯片0.09mm精度分割',
-                'Q2v0-0.08' : '芯片0.08mm精度分割',
-                'Q2v0-0.07' : '芯片0.07mm精度分割',
-                'Q2v0-tmp' : '芯片0.1mm精度分割'
-            }
-            self.path_names = ['芯片3.57mm高度处对角线线路', '芯片2.67mm高度处对角线线路', 
-                '芯片1.77mm高度处对角线线路', '芯片0.87mm高度处对角线线路', '芯片角点处3.57mm至0mm竖直线路']
-            self.exchange_char = {
-                    'h0':'-height-3.57mm',
-                    'h1':'-height-2.67mm',
-                    'h2':'-height-1.77mm',
-                    'h3':'-height-0.87mm',
-                    'v0':'-height-3.57mm_to_0mm'}
-            self.CTE_title = f'Q{self.question}' + 'CTE热膨胀系数在不同芯片高度上以及角点处竖直线路上的变化'
-            self.ela_title = f'Q{self.question}' + '拉伸模量在不同芯片高度上以及角点处竖直线路上的变化'
-            self.height_strs_cte = ['CTE-Path-height-3.57mm', 'CTE-Path-height-2.67mm', 
-                'CTE-Path-height-1.77mm', 'CTE-Path-height-0.87mm', 'CTE-Path-height-3.57mm_to_0mm']
-            self.height_strs_ela = ['ela-Path-height-3.57mm', 'ela-Path-height-2.67mm', 
-                    'ela-Path-height-1.77mm', 'ela-Path-height-0.87mm', 'ela-Path-height-3.57mm_to_0mm']
+@dataclass
+class QuestionConfig:
+    """Configuration for each question type"""
+    question_id: int
+    output_folder: str
+    fontsize: int
+    yscale: Tuple[float, float]
+    name_converter: Dict[str, str]
+    path_names: List[str]
+    exchange_char: Dict[str, str]
+    height_strs_cte: List[str]
+    height_strs_ela: List[str]
+    grid_names: List[str]
+    duty_names: dict = field(default_factory=lambda: {
+            'CTE': 'Thermal Expansion Coefficient',
+            'ela': 'Elastic Modulus',
+            'Ther': 'Thermal Strain',
+            'stress': 'Diagonal Stress',
+            'Temp': 'Temperature',
+            'strain': 'Diagonal Strain'
+        })
+    Grid_stability_ther = defaultdict(list)
+    Grid_stability_modu = defaultdict(list)
 
-        elif self.question == 3:
-            self.initpath = os.path.join("C:\\Users\\oft\\Documents\\ShenZhenCup\\output", 'Q3')
-            self.fontsize = 4
-            self.yscale = (-200000, 300000)
-            self.name_converter = {
-                'Q3-4': '芯片4mm精度分割',
-                'Q3-5': '芯片5mm精度分割',
-                'Q3-3': '芯片3mm精度分割',
-                'Q3-2': '芯片2mm精度分割',
-                'Q3-1.5': '芯片1.5mm精度分割',
-                'Q3-0.3': '芯片0.3mm精度分割',
-                'Q3-1': '芯片1mm精度分割',
-                'Q3-0.5': '芯片0.5mm精度分割',
-                'Q3-0.4': '芯片0.4mm精度分割',
-                'Q3-0.2': '芯片0.2mm精度分割',
-                'Q3-1.3': '芯片1.3mm精度分割'
-            }
-            self.path_names = ['芯片1.97mm高度处对角线线路', '芯片1.5mm高度处对角线线路', 
-                '芯片1.3mm高度处对角线线路', '芯片焊球角点处1.97mm至0mm竖直线路',
-                '芯片无焊球角点处1.97mm至0mm竖直线路']
-            self.exchange_char = {
-                    'h0':'-height-1.97mm',
-                    'h1':'-height-1.5mm',
-                    'h2':'-height-1.3mm',
-                    'v0':'-height-1.97mm_to_0mm_焊球端',
-                    'v1':'-height-1.97mm_to_0mm_无焊球端'}
-            self.CTE_title = f'Q{self.question}' + 'CTE热膨胀系数在不同芯片高度上以及角点处竖直线路上的变化'
-            self.ela_title = f'Q{self.question}' + '拉伸模量在不同芯片高度上以及角点处竖直线路上的变化'
-            self.height_strs_cte = ['CTE-Path-height-1.97mm', 'CTE-Path-height-1.5mm', 
-                'CTE-Path-height-1.3mm', 'CTE-Path-height-1.97mm_to_0mm_焊球端', 'CTE-Path-height-1.97mm_to_0mm_无焊球端']
-            self.height_strs_ela = ['ela-Path-height-1.97mm', 'ela-Path-height-1.5mm', 
-                'ela-Path-height-1.3mm', 'ela-Path-height-1.97mm_to_0mm_焊球端', 'ela-Path-height-1.97mm_to_0mm_无焊球端']
-            
-    def process_folder(self, folder_Path, duty):
-        if not os.path.exists(folder_Path):
-            print(f"Not find {folder_Path}, skip it")
-            return
+    @property
+    def cte_title(self) -> str:
+        return f'Q{self.question_id} CTE Variation at Different Heights and Vertical Path at Corner Points'
+    
+    @property
+    def ela_title(self) -> str:
+        return f'Q{self.question_id} Elastic Modulus Variation at Different Heights and Vertical Path at Corner Points'
 
-        data = {}
-        if os.path.isdir(folder_Path):
-            names = [x for x in os.listdir(folder_Path) if x.startswith(duty)]
-        else:
-            print(f'{folder_Path} is not a folder')
+class ConfigManager:
+    """Manages configurations for different questions"""
+    
+    @staticmethod
+    def get_config(question: int, base_path: str = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output") -> QuestionConfig:
+        """Get configuration for specified question"""
+        configs = {
+            1: ConfigManager._get_q1_config(base_path),
+            2: ConfigManager._get_q2_config(base_path),
+            3: ConfigManager._get_q3_config(base_path)
+        }
+        
+        if question not in configs:
+            raise ValueError(f"Question {question} not supported. Available: {list(configs.keys())}")
+        
+        return configs[question]
+    
+    @staticmethod
+    def _get_q1_config(base_path: str) -> QuestionConfig:
+        return QuestionConfig(
+            question_id=1,
+            output_folder=os.path.join(base_path, 'Q1'),
+            fontsize=7,
+            yscale=(-200000, 500000),
+            name_converter={
+                'Q1-1': 'FQN 1mm Grid',
+                'Q1-2': 'FQN 2mm Grid',
+                'Q1-3': 'FQN 3mm Grid',
+                'Q1-2.5': 'FQN 2.5mm Grid',
+                'Q1-0.5': 'FQN 0.5mm Grid',
+                'Q1-1.5': 'FQN 1.5mm Grid'
+            },
+            path_names=[
+                'BGA Diagonal Path at 2mm Height', 
+                'BGA Diagonal Path at 1.5mm Height',
+                'BGA Diagonal Path at 1mm Height', 
+                'BGA Diagonal Path at 0.5mm Height', 
+                'BGA Vertical Path from 2mm to 0mm at Corner'
+            ],
+            exchange_char={
+                'h0': '-height-2mm',
+                'h1': '-height-1.5mm',
+                'h2': '-height-1mm',
+                'h3': '-height-0.5mm',
+                'v0': '-height-2mm_to_0mm'
+            },
+            height_strs_cte=[
+                'CTE-Path-height-2mm', 
+                'CTE-Path-height-1.5mm',
+                'CTE-Path-height-1mm', 
+                'CTE-Path-height-0.5mm', 
+                'CTE-Path-height-2mm_to_0mm'
+            ],
+            height_strs_ela=[
+                'ela-Path-height-2mm', 
+                'ela-Path-height-1.5mm',
+                'ela-Path-height-1mm', 
+                'ela-Path-height-0.5mm', 
+                'ela-Path-height-2mm_to_0mm'
+            ],
+            grid_names=['3mm Grid', '2.5mm Grid', '2mm Grid', '1.5mm Grid',
+                        '1mm Grid', '0.5mm Grid']
+        )
+    
+    @staticmethod
+    def _get_q2_config(base_path: str) -> QuestionConfig:
+        return QuestionConfig(
+            question_id=2,
+            output_folder=os.path.join(base_path, 'Q2'),
+            fontsize=7,
+            yscale=(-200000, 300000),
+            name_converter={
+                'Q2-1': 'BGA 1mm Grid',
+                'Q2-2': 'BGA 2mm Grid',
+                'Q2-3': 'BGA 3mm Grid',
+                'Q2-2.5': 'BGA 2.5mm Grid',
+                'Q2-0.5': 'BGA 0.5mm Grid',
+                'Q2-1.5': 'BGA 1.5mm Grid'
+            },
+            path_names=[
+                'Chip Diagonal Path at 3.57mm Height', 
+                'Chip Diagonal Path at 2.67mm Height',
+                'Chip Diagonal Path at 1.77mm Height', 
+                'Chip Diagonal Path at 0.87mm Height', 
+                'Chip Vertical Path from 3.57mm to 0mm at Corner'
+            ],
+            exchange_char={
+                'h0': '-height-3.57mm',
+                'h1': '-height-2.67mm',
+                'h2': '-height-1.77mm',
+                'h3': '-height-0.87mm',
+                'v0': '-height-3.57mm_to_0mm'
+            },
+            height_strs_cte=[
+                'CTE-Path-height-3.57mm', 
+                'CTE-Path-height-2.67mm',
+                'CTE-Path-height-1.77mm', 
+                'CTE-Path-height-0.87mm', 
+                'CTE-Path-height-3.57mm_to_0mm'
+            ],
+            height_strs_ela=[
+                'ela-Path-height-3.57mm', 
+                'ela-Path-height-2.67mm',
+                'ela-Path-height-1.77mm', 
+                'ela-Path-height-0.87mm', 
+                'ela-Path-height-3.57mm_to_0mm'
+            ],
+            grid_names=['3mm Grid', '2.5mm Grid', '2mm Grid', '1.5mm Grid',
+                        '1mm Grid', '0.5mm Grid']
+        )
+    
+    @staticmethod
+    def _get_q3_config(base_path: str) -> QuestionConfig:
+        return QuestionConfig(
+            question_id=3,
+            output_folder=os.path.join(base_path, 'Q3'),
+            fontsize=7,
+            yscale=(-200000, 300000),
+            name_converter={
+                'Q3-1': 'BGA 1mm Grid',
+                'Q3-2': 'BGA 2mm Grid',
+                'Q3-3': 'BGA 3mm Grid',
+                'Q3-2.5': 'BGA 2.5mm Grid',
+                'Q3-0.5': 'BGA 0.5mm Grid',
+                'Q3-1.5': 'BGA 1.5mm Grid'
+            },
+            path_names=[
+                'Chip Diagonal Path at 1.97mm Height', 
+                'Chip Diagonal Path at 1.5mm Height',
+                'Chip Diagonal Path at 1.3mm Height', 
+                'Chip Vertical Path from 1.97mm to 0mm (Solder Ball End)',
+                'Chip Vertical Path from 1.97mm to 0mm (No Solder Ball End)'
+            ],
+            exchange_char={
+                'h0': '-height-1.97mm',
+                'h1': '-height-1.5mm',
+                'h2': '-height-1.3mm',
+                'v0': '-height-1.97mm_to_0mm_焊球端',
+                'v1': '-height-1.97mm_to_0mm_无焊球端'
+            },
+            height_strs_cte=[
+                'CTE-Path-height-1.97mm', 
+                'CTE-Path-height-1.5mm',
+                'CTE-Path-height-1.3mm', 
+                'CTE-Path-height-1.97mm_to_0mm_焊球端',
+                'CTE-Path-height-1.97mm_to_0mm_无焊球端'
+            ],
+            height_strs_ela=[
+                'ela-Path-height-1.97mm', 
+                'ela-Path-height-1.5mm',
+                'ela-Path-height-1.3mm', 
+                'ela-Path-height-1.97mm_to_0mm_焊球端',
+                'ela-Path-height-1.97mm_to_0mm_无焊球端'
+            ],
+            grid_names=['3mm Grid', '2.5mm Grid', '2mm Grid', '1.5mm Grid',
+                        '1mm Grid', '0.5mm Grid']
+        )
+    
+class DataProcessor:
+    """Handles data processing operations"""
+    
+    def __init__(self, config: QuestionConfig):
+        self.config = config
+    
+    def process_folder(self, folder_path: str, duty: str) -> Optional[pd.DataFrame]:
+        """Process a folder containing data files"""
+        folder_path = Path(folder_path)
+        
+        if not folder_path.exists():
+            print(f"Directory not found: {folder_path}")
             return None
         
-        for name in names:
-            name_dict = name.split('.')[0]
-            name_dict = name_dict[:-2] + self.exchange_char[name_dict[-2:]]
-            data[name_dict] = []
-            path = os.path.join(folder_Path, name)
-            with open(path, 'r') as file:
-                csv_reader = csv.reader(file, delimiter='\t')
-                next(csv_reader)
-                for row in csv_reader:
-                    data[name_dict].append(row[-1])
+        if not folder_path.is_dir():
+            print(f"Path is not a directory: {folder_path}")
+            return None
         
-        return pd.DataFrame(data, dtype=np.float64)
-
-    def to_xlsx(self, input_folder, output_file):
-        for folder_name in os.listdir(input_folder):
-            folder_Path = os.path.join(input_folder, folder_name)
-            tem_str = folder_name.split('-')[-1].split()[0][:4]
-            cte_output = self.process_folder(folder_Path, 'CTE')
-            ela_output = self.process_folder(folder_Path, 'ela')
-
-            if cte_output is None or ela_output is None:
+        # Find files starting with duty prefix
+        data_files = [f for f in folder_path.iterdir() if f.name.startswith(duty)]
+        
+        if not data_files:
+            print(f"No files found starting with '{duty}' in {folder_path}")
+            return None
+        
+        data = {}
+        for file_path in data_files:
+            # Parse filename to get key
+            name_parts = file_path.stem.split('.')
+            if len(name_parts) < 1:
                 continue
+                
+            name_key = name_parts[0]
+            if len(name_key) >= 2:
+                suffix = name_key[-2:]
+                if suffix in self.config.exchange_char:
+                    name_key = name_key[:-2] + self.config.exchange_char[suffix]
+            
+            # Read file data
             try:
-                with pd.ExcelWriter(output_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                    cte_output.to_excel(writer, sheet_name='CTE-'+tem_str+'摄氏度', index=False)
-                    ela_output.to_excel(writer, sheet_name='ela-'+tem_str+'摄氏度', index=False)
-            except FileNotFoundError:
-                with pd.ExcelWriter(output_file, engine='openpyxl', mode='w') as writer:
-                    cte_output.to_excel(writer, sheet_name='CTE-'+tem_str+'摄氏度', index=False)
-                    ela_output.to_excel(writer, sheet_name='ela-'+tem_str+'摄氏度', index=False)
-
-    def to_total_dataframe(self, input_folder):    
-        CTE_LIST, ELA_LIST = {}, {}
-        for folder_name in os.listdir(input_folder):
-            folder_Path = os.path.join(input_folder, folder_name)
-            tem_str = folder_name.split('-')[-1].split()[0][:4]
-            cte_output = self.process_folder(folder_Path, 'CTE')
-            ela_output = self.process_folder(folder_Path, 'ela')
-            if cte_output is None or ela_output is None:
+                with open(file_path, 'r') as file:
+                    csv_reader = csv.reader(file, delimiter='\t')
+                    next(csv_reader)  # Skip header
+                    values = [row[-1] for row in csv_reader if row]
+                    data[name_key] = values
+            except Exception as e:
+                print(f"Error reading file {file_path}: {e}")
                 continue
+        
+        if not data:
+            return None
 
-            CTE_LIST[tem_str] = cte_output
-            ELA_LIST[tem_str] = ela_output
-        return CTE_LIST, ELA_LIST
-
-    def pathdata2variance(self, path_data):
-        variance = np.var(path_data)
-        squr_str = f"方差: {variance:.2e}"
-        if np.isnan(variance):
-            pass 
-        return squr_str
-
-    def draw_result(self, results, duty):
-        if self.question ==2:
-            dir_names = ['4mm网格', '3.5mm网格', '3mm网格', '2.5mm网格', '2mm网格',
-                         '1.5mm网格', '1mm网格', '0.5mm网格', '0.2mm网格', '0.1mm网格',
-                         '0.09mm网格', '0.08mm网格', '0.07mm网格']
-        elif self.question == 3:
-            dir_names = ['5mm网格', '4mm网格', '3mm网格', '2mm网格', '1mm网格', 
-                         '0.5mm网格', '0.4mm网格', '0.3mm网格', '0.2mm网格']
-            labels = ['焊球端', '无焊球端']
-        elif self.question == 1:
-            dir_names = ['2.5mm网格', '2mm网格', '1.5mm网格', 
-                         '1mm网格', '0.7mm网格', '0.5mm网格', '0.3mm网格', '0.2mm网格']
+        return pd.DataFrame(data, dtype=np.float64)
+    
+    def to_excel(self, input_folder: str, output_file: str) -> None:
+        """Convert processed data to Excel format"""
+        input_path = Path(input_folder)
+        
+        for folder_name in input_path.iterdir():
+            if not folder_name.is_dir():
+                continue
+                
+            # Extract temperature from folder name
+            try:
+                temp_str = folder_name.name.split('-')[-1].split()[0][:4]
+            except (IndexError, ValueError):
+                continue
             
-        plt.rcParams.update({'font.size':7,
-                            'font.family':'SimHei',
-                            'axes.unicode_minus':False})
-        FIG = plt.figure(dpi=800, figsize=(8, 6))
-        axe = FIG.subplots(1, 1)
-        for i, result in enumerate(results):
-            if self.question == 3:
-                axe.plot(dir_names, result, label=labels[i])
-                axe.legend(loc='upper right', fontsize=8)
-            else:
-                axe.plot(dir_names, result)
-        FIG.suptitle(f'Q{self.question}网格细分程度稳定性检验', fontsize=12)
-        if duty == 'CTE':
-            FIG.supylabel('热膨胀系数', fontsize=12)
-        else:
-            FIG.supylabel('拉伸模量', fontsize=12)
-        FIG.supxlabel('不同网格大小', fontsize=12)
-        FIG.savefig(os.path.join(self.initpath, duty+'不同网格细化下的最终角点结果.jpg'))
+            # Process CTE and elasticity data
+            dutys = ['CTE', 'ela', 'Ther', 'stress', 'strain']
+            results = {}
+            for duty in dutys:
+                results[duty] = self.process_folder(folder_name, duty)
+                if results[duty] is None:
+                    raise ValueError(f"Data for duty '{duty}' is None ")
+                
+            # Write to Excel with English sheet names
+            try:
+                if Path(output_file).exists():
+                    with pd.ExcelWriter(output_file, engine='openpyxl', 
+                                    mode='a', if_sheet_exists='replace') as writer:
+                        for duty_name, result in results.items():
+                            sheet_name = f'{duty_name}-{temp_str}C'  # Changed from 摄氏度 to C
+                            result.to_excel(writer, sheet_name=sheet_name, index=False)
+                else:
+                    with pd.ExcelWriter(output_file, engine='openpyxl', 
+                                    mode='w') as writer:
+                        for duty_name, result in results.items():
+                            sheet_name = f'{duty_name}-{temp_str}C'  # Changed from 摄氏度 to C
+                            result.to_excel(writer, sheet_name=sheet_name, index=False)
+            except Exception as e:
+                print(f"Error writing Excel file: {e}")
+    
+    def get_total_dataframes(self, input_folder: str) -> Tuple[Dict, Dict]:
+        """Get all dataframes organized by temperature"""
+        input_path = Path(input_folder)
+        result_list = {}
 
-    def avertem_diffmiss(self, dir_names, duty, step, shareY=False, scale=False):
-        plt.rcParams.update({'font.size':7,
-                            'font.family':'SimHei',
-                            'axes.unicode_minus':False})
-        colors = cm.coolwarm(np.linspace(0, 1, len(dir_names)))
+        dutys = ['CTE', 'ela', 'Ther', 'stress', 'strain', 'Temp']
+        for duty in dutys:
+            result_data = {}
+            for folder_name in input_path.iterdir():
+                if not folder_name.is_dir():
+                    continue
+                    
+                try:
+                    temp_str = folder_name.name.split('-')[-1].split()[0][:4]
+                except (IndexError, ValueError):
+                    continue
 
-        def draw(axes, result_list, name, name_id, global_handles, global_labels, local_handles, local_labels):
-            for i, (_, path_data) in enumerate(result_list.items()):
+                result_data[temp_str] = self.process_folder(folder_name, duty)
+                if result_data[temp_str] is None:
+                    raise ValueError(f"duty {duty} can't find result")
+
+            result_list[duty] = result_data
+
+        return result_list
+
+    def get_aver_scatter(self, dir_name: str, duty: str):
+        if duty not in ['thermal', 'modulus']:
+            raise ValueError(f"{duty} not in ['thermal', 'modulus']")
+        
+        mapping = {
+            'thermal': ['Ther', 'Temp'],
+            'modulus': ['stress', 'strain']
+        }
+        duty_targeted = mapping[duty]
+        
+        all_processing_units = []
+        all_shapes = []  # Changed from all_colors to all_shapes for academic style
+        
+        # for dir_name in dir_names:
+        dir_path = Path(self.config.output_folder) / dir_name        
+        result_list = self.get_total_dataframes(dir_path)
+            
+        # Create processing units for each targeted duty
+        for duty_name in duty_targeted:
+            temp_data = result_list[duty_name]  # Temperature dictionary
+            
+            processing_unit = []
+            shapes = []
+
+            # Get all temperature values for categorization
+            all_temps = sorted([float(temp) for temp in temp_data.keys()])
+            temp_categories = self._categorize_temperatures(all_temps)
+            
+            # Process data for each temperature
+            for temp_str, route_data in temp_data.items():
+                temp_val = float(temp_str)
+                temp_category = temp_categories[temp_val]
+                
+                # Get first route data
+                first_route_name = list(route_data.columns)[0]
+                route_values = route_data[first_route_name].values
+                
+                # Store values and corresponding categories
+                route_length = len(route_values)
+                for i, value in enumerate(route_values):
+                    processing_unit.append(value)
+                    
+                    # Create shape category based on temperature and position
+                    # Shape combines temperature category and position information
+                    position_category = self._categorize_position(i, route_length)
+                    shapes.append((temp_category, position_category))
+            
+            all_processing_units.append(processing_unit)
+            all_shapes.append(shapes)
+        
+        return all_processing_units, all_shapes
+    
+    def _categorize_temperatures(self, temps: List[float]) -> Dict[float, str]:
+        """Categorize temperatures into 3 groups for academic visualization"""
+        if not temps:
+            return {}
+        
+        categories = {}
+        sorted_temps = sorted(temps)
+        
+        if len(sorted_temps) <= 3:
+            # For small number of temps, use simple categories
+            for i, temp in enumerate(sorted_temps):
                 if i == 0:
-                    line, = axes.flat[i].plot(path_data, color=colors[name_id])
-                    global_labels.append(self.name_converter[name])
-                    global_handles.append(line)
+                    categories[temp] = 'low'
+                elif i == len(sorted_temps) - 1:
+                    categories[temp] = 'high'
                 else:
-                    line, = axes.flat[i].plot(path_data, color=colors[name_id])
-                local_handles[i].append(line)
-                local_labels[i].append(self.pathdata2variance(path_data))
-                axes.flat[i].set_title(self.path_names[i])
-                axes.flat[i].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-                if scale:
-                    axes.flat[i].set_ylim(*self.yscale)
-            for i in range(len(result_list)):
-                axes.flat[i].legend(local_handles[i], local_labels[i], fontsize=self.fontsize, loc='lower left')
-
-            return global_handles, global_labels, local_handles, local_labels
-        
-        FIG = plt.figure(dpi=800, figsize=(8, 6))
-        axes = FIG.subplots(2, 3, sharey=shareY, sharex=True)
-        axes[1, 2].remove()
-
-        dir_list = [(x, os.path.join(self.initpath, x)) for x in dir_names if os.path.isdir(os.path.join(self.initpath, x))]
-        global_handles, global_labels = [], []
-        local_handles, local_labels = [[] for _ in range(5)], [[] for _ in range(5)]
-        result1, result2 = [], []
-        for name_id, (name, dir) in enumerate(dir_list):
-            if duty =='CTE':
-                LIST, _ = self.to_total_dataframe(dir)
-            else:
-                _, LIST = self.to_total_dataframe(dir)
-
-            result_list = {}
-            for i, (_, output) in enumerate(LIST.items()):
-                for path_name, path_data in output.items():
-                    if i == 0:
-                        result_list[path_name] = path_data / len(LIST)
-                    else:
-                        result_list[path_name] += path_data / len(LIST)
-            global_handles, global_labels, local_handles, local_labels= draw(axes, result_list, name, name_id, global_handles, global_labels, local_handles, local_labels)
-
-            if duty == 'CTE':
-                result_1 = result_list[self.height_strs_cte[0]]
-            else:
-                result_1 = result_list[self.height_strs_ela[0]]                  
-            if self.question == 3:
-                if duty == 'ela':
-                    result1.append(result_1.iloc[3]); result2.append(result_1.iloc[-4])
-                else:
-                    result1.append(result_1.iloc[0]); result2.append(result_1.iloc[-1])
-            else:
-                if self.question == 1 and duty == 'ela':
-                    result1.append(result_1.iloc[2])
-                else:
-                    result1.append(result_1.iloc[0])
-
-        if self.question == 3:
-            self.draw_result([result1, result2], duty)
+                    categories[temp] = 'medium'
         else:
-            self.draw_result([result1], duty)
-
-        FIG.legend(global_handles, global_labels, bbox_to_anchor=(0.9, 0.4), fontsize=8, ncol=1)
-        if duty == 'CTE':
-            FIG.supylabel('CTE热膨胀系数', fontsize=12)
-            FIG.suptitle('不同网格细化程度下,' + self.CTE_title, fontsize=12)
-        else:
-            FIG.supylabel('拉伸模量', fontsize=12)
-            FIG.suptitle('不同网格细化程度下,' + self.ela_title, fontsize=12)
-        FIG.supxlabel('节点序号', fontsize=12)
-
-        output_name = f'Q{self.question}-' + duty
-        if shareY:
-            output_name += '-shareY'
-        if scale:
-            output_name += '-scale'
-        output_name += f'-STEP{step}'
-        FIG.savefig(os.path.join(self.initpath, output_name+'.jpg'))
+            # For larger number, divide into three groups using tertiles
+            tertile1 = np.percentile(sorted_temps, 33.33)
+            tertile2 = np.percentile(sorted_temps, 66.67)
             
-    def draw_from_dataframe(self, LIST, name, output_path, scale=False, shareY=False):
-        color_len = len(LIST)
-        list_ordered = [(float(tem), tem, array) for tem, array in LIST.items()]
-        list_ordered.sort(key=lambda x: x[0])
-
-        colors = cm.coolwarm(np.linspace(0, 1, color_len))
-        plt.rcParams.update({'font.size':7,
-                            'font.family':'SimHei',
-                            'axes.unicode_minus':False})
-        FIG = plt.figure(figsize=(8,6), dpi=800)
-        axes = FIG.subplots(2, 3, sharex=True, sharey=shareY)
-
-        if name == 'ela':
-            height_strs = self.height_strs_ela
-        else:
-            height_strs = self.height_strs_cte
-
-        local_handles, local_labels = [[] for _ in range(5)], [[] for _ in range(5)]    
-        for j, (_, tem_str, output) in enumerate(list_ordered):
-            for i in range(len(height_strs)):
-                if i == 0 :
-                    line, = axes.flat[i].plot(output[height_strs[i]], label=f'Tem:{tem_str}℃', color=colors[j])
+            for temp in temps:
+                if temp <= tertile1:
+                    categories[temp] = 'low'
+                elif temp <= tertile2:
+                    categories[temp] = 'medium'
                 else:
-                    line, = axes.flat[i].plot(output[height_strs[i]], color=colors[j])
-                axes.flat[i].set_title(self.path_names[i])
-                axes.flat[i].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-                local_handles[i].append(line)
-                local_labels[i].append(self.pathdata2variance(output[height_strs[i]]))
-                if scale:
-                    axes.flat[i].set_ylim(self.yscale)
-        for i in range(len(height_strs)):
-            axes.flat[i].legend(local_handles[i], local_labels[i], fontsize=3, loc='upper right', ncol=2)
-        axes[1, 2].remove()
-
-        FIG.legend(bbox_to_anchor=(0.95, 0.4), fontsize=8, ncol=2)
-        FIG.supxlabel('节点序号', fontsize=12)
-        if name == 'CTE':
-            FIG.supylabel('CTE热膨胀系数', fontsize=12)
-            FIG.suptitle(self.CTE_title, fontsize=12)
-        else:
-            FIG.supylabel('拉伸模量', fontsize=12)
-            FIG.suptitle(self.ela_title, fontsize=12)
+                    categories[temp] = 'high'
         
-        output_name = name
-        if scale:
-            output_name += '-scale'
-        if shareY:
-            output_name += '-sharey'
-        FIG.savefig(os.path.join(output_path, output_name + '.jpg'))
-
-    def add_xlsx_photo(self, dir_names):
-        output_xlsx_name = f'Q{self.question}_CTE_ela.xlsx'
-        for dir_name in dir_names:
-            dir_path = os.path.join(self.initpath, dir_name)
-            self.to_xlsx(dir_path, os.path.join(dir_path, output_xlsx_name))
-            CTE_LIST, ELA_LIST = self.to_total_dataframe(dir_path)
-            self.draw_from_dataframe(CTE_LIST, 'CTE', dir_path, shareY=True)
-            self.draw_from_dataframe(ELA_LIST, 'ela', dir_path, scale=True)
-            self.draw_from_dataframe(CTE_LIST, 'CTE', dir_path)
-            self.draw_from_dataframe(ELA_LIST, 'ela', dir_path)
-
-    def get_from_difftems(self, folder_name, duty):
-        folder_path = os.path.join(self.initpath, folder_name)
-        if duty == 'CTE':
-            LIST, _ = self.to_total_dataframe(folder_path)
-        else:
-            _, LIST = self.to_total_dataframe(folder_path)
-
-        output_dataf = {}
-        tems = []
-        for tem_str, output in LIST.items():
-            tems.append(float(tem_str))
-            if duty == 'CTE':
-                output_dataf[tem_str+'摄氏度'] = [output[self.height_strs_cte[0]].iloc[0]]
+        return categories
+    
+    def _categorize_position(self, index: int, total_length: int) -> str:
+        """Categorize position along the path"""
+        if total_length <= 1:
+            return 'single'
+        
+        relative_pos = index / (total_length - 1)
+        
+        if self.config.question_id == 3:
+            center_index = total_length // 2
+            
+            if index < center_index:
+                side = 'solder'  # Solder ball side (near side)
             else:
-                if self.question == 1:
-                    output_dataf[tem_str+'摄氏度'] = [output[self.height_strs_ela[0]].iloc[1]] 
-                else:
-                    output_dataf[tem_str+'摄氏度'] = [output[self.height_strs_ela[0]].iloc[0]] 
+                side = 'no_solder'  # No solder ball side (far side)
+            
+            if relative_pos <= 0.1 or relative_pos >= 0.9:
+                return f'edge_{side}'
+            elif 0.4 <= relative_pos <= 0.6:
+                return f'center_{side}'
+            else:
+                return f'intermediate_{side}'
         
-        output_dataf = pd.DataFrame(output_dataf)
-        output_dataf.to_excel(os.path.join(self.initpath, f'Q{self.question}不同温度拉伸模量.xlsx'),
-                                index=None, engine='openpyxl', 
-                                sheet_name='Q'+str(self.question))
+        # Original logic for Q1 and Q2
+        if relative_pos <= 0.1 or relative_pos >= 0.9:
+            return 'edge'
+        elif 0.4 <= relative_pos <= 0.6:
+            return 'center'
+        else:
+            return 'intermediate'
 
-def Q1():
-    Data_Sorter1 = Data_Sorter(question=1)
-    # dir_names_list = [['Q1-m2.5', 'Q1-m2', 'Q1-m1.5', 'Q1-m1', 'Q1-m0.7', 'Q1-m0.5', 'Q1-m0.3', 'Q1-m0.2']]
-    # for step, dir_names in enumerate(dir_names_list):
-    #     Data_Sorter1.avertem_diffmiss(dir_names, 'CTE', step, shareY=True)
-    #     Data_Sorter1.avertem_diffmiss(dir_names, 'ela', step, scale=True)
-    dir_names = ['Q1-m0.2']
-    Data_Sorter1.add_xlsx_photo(dir_names)
-    # Data_Sorter1.get_from_difftems(folder_name='Q1-m0.3', duty='ela')
+    @staticmethod
+    def calculate_variance_string(data: pd.Series) -> str:
+        """Calculate variance and return formatted string"""
+        variance = np.var(data)
+        return f"Var: {variance:.2e}" if not np.isnan(variance) else "Var: NaN"
 
-def Q2():
-    Data_Sorter1 = Data_Sorter(question=2)
-    # dir_names_list = [['Q2v0-4', 'Q2v0-3.5', 'Q2v0-3', 'Q2v0-2.5', 'Q2v0-2', 'Q2v0-1.5', 
-    #                    'Q2v0-1', 'Q2v0-0.5', 'Q2v0-0.2', 'Q2v0-0.1', 'Q2v0-0.09', 'Q2v0-0.08',
-    #                    'Q2v0-0.07']]
-    # for step, dir_names in enumerate(dir_names_list):
-    #     Data_Sorter1.avertem_diffmiss(dir_names, 'CTE', step, shareY=True)
-    #     Data_Sorter1.avertem_diffmiss(dir_names, 'ela', step, scale=True)
-    dir_names = ['Q2v0-0.07']
-    Data_Sorter1.add_xlsx_photo(dir_names)
-    # Data_Sorter1.get_from_difftems(folder_name='Q2v0-0.2', duty='ela')
+class Visualizer:
+    """Handles all visualization operations with enhanced aesthetics"""
+    
+    def __init__(self, config: QuestionConfig):
+        self.config = config
+        self._setup_matplotlib()
+    
+    def _setup_matplotlib(self) -> None:
+        """Setup matplotlib with enhanced style for academic papers"""
+        import matplotlib.pyplot as plt
+        import matplotlib as mpl
+        
+        # Use seaborn-paper style as base for academic look
+        plt.style.use('seaborn-v0_8-paper')
+        
+        # Custom settings for better aesthetics
+        mpl.rcParams.update({
+            'font.size': 10,
+            'font.family': 'sans-serif',
+            'font.sans-serif': ['Arial', 'DejaVu Sans'],
+            'axes.labelsize': 11,
+            'axes.titlesize': 12,
+            'xtick.labelsize': 9,
+            'ytick.labelsize': 9,
+            'legend.fontsize': 9,
+            'figure.titlesize': 14,
+            'axes.linewidth': 1.2,
+            'axes.grid': True,
+            'grid.alpha': 0.3,
+            'grid.linestyle': '--',
+            'lines.linewidth': 1.5,
+            'lines.markersize': 6,
+            'axes.spines.top': False,
+            'axes.spines.right': False,
+            'axes.edgecolor': '#333333',
+            'axes.labelcolor': '#333333',
+            'text.color': '#333333',
+            'xtick.color': '#333333',
+            'ytick.color': '#333333',
+            'figure.facecolor': 'white',
+            'axes.facecolor': 'white',
+            'savefig.dpi': 600,
+            'savefig.bbox': 'tight',
+            'savefig.pad_inches': 0.1
+        })
 
-def Q3():
-    Data_Sorter1 = Data_Sorter(question=3)
-    # dir_names_list = [['Q3-5', 'Q3-4', 'Q3-3', 'Q3-2', 'Q3-1', 
-    #                    'Q3-0.5', 'Q3-0.4', 'Q3-0.3', 'Q3-0.2']]
-    # for step, dir_names in enumerate(dir_names_list):
-    #     Data_Sorter1.avertem_diffmiss(dir_names, 'CTE', step, shareY=True)
-    #     Data_Sorter1.avertem_diffmiss(dir_names, 'ela', step, scale=True)
-    dir_names = ['Q3-0.2']
-    Data_Sorter1.add_xlsx_photo(dir_names)
-    # Data_Sorter1.get_from_difftems(folder_name='Q3-0.3', duty='ela')
-Q1()
+    def plot_temperature_comparison(self, data_dict: Dict, duty: str, output_path: str,
+                                   scale: bool = False, share_y: bool = False) -> None:
+        """Plot temperature comparison with enhanced aesthetics"""
+        if duty not in ['CTE', 'ela']:
+            raise ValueError(f"{duty} not in ['CTE', 'ela']")
+
+        # Sort by temperature
+        sorted_data = sorted([(float(temp), temp, data) for temp, data in data_dict.items()])
+        
+        # Use temperature-based colormap for intuitive visualization
+        temps = [item[0] for item in sorted_data]
+        norm = plt.Normalize(vmin=min(temps), vmax=max(temps))
+        colors = plt.cm.coolwarm(norm(temps))
+        
+        # Create figure with optimal layout
+        fig = plt.figure(figsize=(14, 8), dpi=600)
+        gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.25)
+        axes = []
+        for i in range(5):
+            if i == 0:
+                ax = fig.add_subplot(gs[i//3, i%3])
+            else:
+                ax = fig.add_subplot(gs[i//3, i%3], sharey=axes[0])
+            axes.append(ax)
+        
+        height_strs = (self.config.height_strs_cte if duty == 'CTE' 
+                      else self.config.height_strs_ela)
+        
+        local_handles = [[] for _ in range(5)]
+        local_labels = [[] for _ in range(5)]
+        
+        for j, (temp_val, temp_str, output) in enumerate(sorted_data):
+            for i, height_str in enumerate(height_strs):
+                if height_str not in output.columns:
+                    continue
+                
+                # Plot with temperature-based color
+                line, = axes[i].plot(output[height_str], 
+                                    color=colors[j],
+                                    linewidth=1.8,
+                                    alpha=0.85,
+                                    label=f'{temp_str}°C' if i == 1 else None)
+                
+                # Enhance subplot appearance
+                axes[i].set_title(self.config.path_names[i], 
+                                fontsize=10, fontweight='semibold', pad=8)
+                axes[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                axes[i].grid(True, alpha=0.25, linestyle='--', linewidth=0.5)
+                axes[i].set_axisbelow(True)
+                
+                # Style spines
+                for spine in ['top', 'right']:
+                    axes[i].spines[spine].set_visible(False)
+                for spine in ['left', 'bottom']:
+                    axes[i].spines[spine].set_linewidth(1)
+                    axes[i].spines[spine].set_color('#666666')
+                
+                # Add minor ticks
+                axes[i].minorticks_on()
+                axes[i].tick_params(which='minor', length=2, width=0.5)
+                axes[i].tick_params(which='major', length=4, width=1)
+                
+                local_handles[i].append(line)
+                local_labels[i].append(DataProcessor.calculate_variance_string(output[height_str]))
+                
+                if scale:
+                    axes[i].set_ylim(self.config.yscale)
+        
+        # Add variance legends to each subplot
+        for i in range(5):
+            if local_handles[i]:
+                var_legend = axes[i].legend(local_handles[i], local_labels[i], 
+                                          fontsize=6, loc='upper right',
+                                          frameon=True, fancybox=True,
+                                          framealpha=0.9, edgecolor='#CCCCCC',
+                                          ncol=2 if len(local_handles[i]) > 4 else 1)
+                var_legend.get_frame().set_linewidth(0.5)
+        
+        # Add temperature colorbar instead of regular legend
+        sm = plt.cm.ScalarMappable(cmap=plt.cm.coolwarm, norm=norm)
+        sm.set_array([])
+        cbar_ax = fig.add_axes([0.92, 0.35, 0.02, 0.3])
+        cbar = fig.colorbar(sm, cax=cbar_ax)
+        cbar.set_label('Temperature (°C)', fontsize=10, fontweight='semibold')
+        cbar.ax.tick_params(labelsize=8)
+        
+        # Set main labels and title
+        fig.text(0.04, 0.5, self.config.duty_names[duty], 
+                va='center', rotation='vertical', 
+                fontsize=12, fontweight='semibold')
+        fig.text(0.5, 0.02, 'Node Index', ha='center', 
+                fontsize=12, fontweight='semibold')
+        
+        title = self.config.cte_title if duty == 'CTE' else self.config.ela_title
+        fig.suptitle(f'Temperature-Dependent Analysis: {title}', 
+                    fontsize=14, fontweight='bold', y=0.98)
+        
+        # Save with high quality
+        suffix = '-shareY' if share_y else ''
+        suffix += '-scale' if scale else ''
+        output_file = Path(output_path) / f'{duty}_temperature_analysis{suffix}.png'
+        fig.savefig(output_file, dpi=600, bbox_inches='tight',
+                   facecolor='white', edgecolor='none')
+        
+        plt.close(fig)
+
+    def plot_scatter_analysis(self, all_processing_units: List[List], all_shapes: List[List], 
+                            duty: str, output_name: str = None, title_suffix: str = "") -> None:
+        """Create academic-style scatter plot with shape-based categorization"""
+        if len(all_processing_units) != 2 or len(all_shapes) != 2:
+            raise ValueError("Expected exactly 2 processing units and 2 shape lists")
+
+        x_data = all_processing_units[1]
+        y_data = all_processing_units[0] 
+        shapes_data = all_shapes[0] 
+        
+        if len(x_data) != len(y_data) or len(shapes_data) != len(x_data):
+            raise ValueError("Data lengths don't match")
+        
+        plt.style.use('seaborn-v0_8-whitegrid')
+        fig, ax = plt.subplots(figsize=(12, 8), dpi=600) 
+        
+        temp_markers = {
+            'low': 'o',      # Circle
+            'medium': 's',   # Square
+            'high': '^'     # Triangle
+        }
+        
+        temp_styles = {
+            'low': {'color': '#2ECC71', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
+            'medium': {'color': '#F39C12', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
+            'high': {'color': '#8E44AD', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2}
+        }
+        
+        pos_colors = {
+            'edge': '#E74C3C',       # Red for edges
+            'center': '#3498DB',     # Blue for center
+            'intermediate': "#C3F449", # Light green for intermediate
+            'single': '#2ECC71',      # Green for single point
+            # Q3 specific - solder side
+            'edge_solder': '#E74C3C',       # Red 
+            'center_solder': '#3498DB',     # Blue
+            'intermediate_solder': "#C3F449", # Light green
+            # Q3 specific - no solder side  
+            'edge_no_solder': '#8B0000',       # Dark red
+            'center_no_solder': '#00008B',     # Dark blue  
+            'intermediate_no_solder': "#7A8B00", # Dark green
+        }
+
+        position_styles = {
+            'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'intermediate': {'color': "#C3F449", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            # Q3 specific styles
+            'edge_solder': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'center_solder': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'intermediate_solder': {'color': "#C3F449", 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'edge_no_solder': {'color': '#8B0000', 'linestyle': '-.', 'alpha': 0.7, 'linewidth': 2.2},
+            'center_no_solder': {'color': '#00008B', 'linestyle': '-.', 'alpha': 0.7, 'linewidth': 2.2},
+            'intermediate_no_solder': {'color': "#7A8B00", 'linestyle': '-.', 'alpha': 0.7, 'linewidth': 2.2},
+        }
+
+        grouped_data = defaultdict(list)
+        for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
+            grouped_data[(temp_cat, pos_cat)].append((x, y))
+        
+        # Plot each group with appropriate style
+        plotted_temp_cats = set()
+        plotted_pos_cats = set()
+        
+        for (temp_cat, pos_cat), points in grouped_data.items():
+            xs, ys = zip(*points)
+            marker = temp_markers[temp_cat]
+            color = pos_colors[pos_cat]
+            
+            ax.scatter(xs, ys, 
+                      marker=marker,
+                      c=color,
+                      s=80,  # Slightly larger markers
+                      alpha=0.7,
+                      edgecolors='black',
+                      linewidth=0.8,
+                      zorder=5)
+            plotted_temp_cats.add(temp_cat)
+            plotted_pos_cats.add(pos_cat)
+        
+        # Temperature category legend elements
+        temp_legend = []
+        temp_labels = {
+            'low': 'Low Temp.',
+            'medium': 'Med. Temp.',
+            'high': 'High Temp.'
+        }
+        
+        for cat in ['low', 'medium', 'high']:
+            if cat in plotted_temp_cats:
+                temp_legend.append(Line2D([0], [0], 
+                          marker=temp_markers[cat],
+                          color=temp_styles[cat]['color'],
+                          markerfacecolor='gray',
+                          markeredgecolor='black',
+                          markeredgewidth=0.8,
+                          markersize=9,
+                          label=temp_labels[cat]))
+        
+        # Position category legend elements  
+        pos_legend = []
+        pos_labels = {
+            'edge': 'Edge Points',
+            'center': 'Center Points',
+            'intermediate': 'Intermediate',
+            'single': 'Single Point',
+            # Q3 specific
+            'edge_solder': 'Edge (Solder Side)',
+            'center_solder': 'Center (Solder Side)',
+            'intermediate_solder': 'Intermediate (Solder Side)',
+            'edge_no_solder': 'Edge (No Solder Side)',
+            'center_no_solder': 'Center (No Solder Side)',
+            'intermediate_no_solder': 'Intermediate (No Solder Side)',
+        }
+
+        if self.config.question_id == 3:
+            categories_to_show = ['edge_solder', 'center_solder', 'intermediate_solder',
+                                'edge_no_solder', 'center_no_solder', 'intermediate_no_solder']
+        else:
+            categories_to_show = ['edge', 'center', 'intermediate', 'single']
+
+        for cat in categories_to_show:
+            if cat in plotted_pos_cats:
+                pos_legend.append(Patch(facecolor=pos_colors[cat], 
+                                    edgecolor='black', linewidth=0.8,
+                                    label=pos_labels[cat]))
+        
+        x_range = max(x_data) - min(x_data)
+        y_range = max(y_data) - min(y_data)
+
+        x_min_limit = min(x_data) - x_range*0.5 
+        x_max_limit = max(x_data) + x_range*0.5
+        y_min_limit = min(y_data) - y_range*0.2 
+        y_max_limit = max(y_data) + y_range*0.2
+        
+        ax.set_xlim(x_min_limit, x_max_limit)
+        ax.set_ylim(y_min_limit, y_max_limit)
+        
+        legend1 = ax.legend(handles=temp_legend, 
+                          loc='upper left',
+                          bbox_to_anchor=(0.02, 0.98),
+                          title='Temperature', 
+                          frameon=True,
+                          fancybox=True, 
+                          shadow=True, 
+                          framealpha=0.95,
+                          edgecolor='#666666',
+                          facecolor='white',
+                          title_fontsize=10,
+                          fontsize=9,
+                          borderpad=1,
+                          columnspacing=1.2,
+                          handletextpad=0.8)
+        ax.add_artist(legend1)
+        
+        legend2 = ax.legend(handles=pos_legend, 
+                          loc='upper left',
+                          bbox_to_anchor=(0.02, 0.78),
+                          title='Position', 
+                          frameon=True,
+                          fancybox=True, 
+                          shadow=True, 
+                          framealpha=0.95,
+                          edgecolor='#666666',
+                          facecolor='white',
+                          title_fontsize=10,
+                          fontsize=9,
+                          borderpad=1,
+                          columnspacing=1.2,
+                          handletextpad=0.8)
+        
+        if duty == 'thermal':
+            fixed_x = 25.0  # For temperature, force through (25, 0)
+            fixed_y = 0.0
+        else:
+            fixed_x = 0.0   # For modulus or others, force through (0, 0)
+            fixed_y = 0.0
+        
+        def forced_point_regression(x, y, fixed_x=0.0, fixed_y=0.0):
+            """Perform linear regression forcing through a fixed point"""
+            x = np.array(x)
+            y = np.array(y)
+            dx = x - fixed_x
+            dy = y - fixed_y
+            slope = np.sum(dx * dy) / np.sum(dx ** 2)
+            y_pred = slope * dx + fixed_y
+            # R-squared
+            ss_res = np.sum((y - y_pred) ** 2)
+            ss_tot = np.sum((y - np.mean(y)) ** 2)
+            r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
+            # p-value
+            n = len(x)
+            if n > 2:
+                se = np.sqrt(ss_res / (n - 1))
+                t_stat = slope / (se / np.sqrt(np.sum(dx ** 2)))
+
+                p_value = 2 * (1 - t.cdf(abs(t_stat), n - 1))
+            else:
+                p_value = np.nan
+            return slope, r_squared, p_value
+        
+        # Perform regression for each position category
+        if self.config.question_id == 3:
+            position_categories = ['edge_solder', 'center_solder', 'intermediate_solder',
+                                'edge_no_solder', 'center_no_solder', 'intermediate_no_solder']
+        else:
+            position_categories = ['edge', 'center', 'intermediate']
+
+        position_regressions = []
+        for pos_cat in position_categories:
+            cat_points = [point for key in grouped_data if key[1] == pos_cat for point in grouped_data[key]]
+            cat_x, cat_y = zip(*cat_points)
+
+            slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
+        
+            x_range = np.array([x_min_limit, x_max_limit])
+            y_range = slope * (x_range - fixed_x) + fixed_y
+            
+            style = position_styles[pos_cat]
+            ax.plot(x_range, y_range, 
+                    color=style['color'],
+                    linestyle=style['linestyle'],
+                    alpha=style['alpha'],
+                    linewidth=style['linewidth'],
+                    zorder=4)
+            
+            position_regressions.append({
+                'category': pos_cat,
+                'slope': slope,
+                'r_squared': r_squared,
+                'p_value': p_value,
+                'n_points': len(cat_points)
+            })
+        self._write_data(position_regressions, duty)
+
+        # Perform regression for each temperature category
+        temp_regressions = []
+        for temp_cat in ['low', 'medium', 'high']:
+            cat_points = [point for key in grouped_data if key[0] == temp_cat and 'edge' in key[1] for point in grouped_data[key]]
+            cat_x, cat_y = zip(*cat_points)
+
+            slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
+        
+            x_range = np.array([x_min_limit, x_max_limit])
+            y_range = slope * (x_range - fixed_x) + fixed_y
+            
+            style = temp_styles[temp_cat]
+            ax.plot(x_range, y_range, 
+                    color=style['color'],
+                    linestyle=style['linestyle'],
+                    alpha=style['alpha'],
+                    linewidth=style['linewidth'],
+                    zorder=4)
+            
+            temp_regressions.append({
+                'category': temp_cat,
+                'slope': slope,
+                'r_squared': r_squared,
+                'p_value': p_value,
+                'n_points': len(cat_points)
+            })
+
+        # Overall regression with all data (duty-dependent fixed point)
+        slope_all, r_squared_all, p_value_all = forced_point_regression(x_data, y_data, fixed_x=fixed_x, fixed_y=fixed_y)
+        x_line = np.array([x_min_limit, x_max_limit])
+        y_line = slope_all * (x_line - fixed_x) + fixed_y
+        ax.plot(x_line, y_line, 'k-', alpha=0.9, linewidth=3.0, 
+               zorder=3)
+        
+        # Create comprehensive regression summary text in lower right
+        regression_text = "━━━ REGRESSION ANALYSIS ━━━\n"
+        regression_text += f"(All fits: y = a(x - {fixed_x:.1f}) + {fixed_y:.1f})\n\n"
+        
+        # Overall regression
+        regression_text += f"▶ Overall (black solid):\n"
+        regression_text += f"  R² = {r_squared_all:.3f}, n = {len(x_data)}\n"
+        regression_text += f"  y = {slope_all:.3e}(x - {fixed_x:.1f})\n\n"
+        
+        # Position-based regressions
+        if position_regressions:
+            regression_text += "▶ Average temp By Position(solid lines):\n"
+            for result in position_regressions:
+                cat_name = result['category'].capitalize()
+                regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
+                if result['r_squared'] > 0.7:  # Show slope for good fits
+                    regression_text += f"    a = {result['slope']:.3e}\n"
+            regression_text += "\n"
+        
+        # Temperature-based regressions
+        if temp_regressions:
+            regression_text += "▶ By Temperature in edge(dashed):\n"
+            for result in temp_regressions:
+                cat_name = result['category'].capitalize()
+                regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
+                if result['r_squared'] > 0.7:  # Show slope for good fits
+                    regression_text += f"    a = {result['slope']:.3e}\n"
+        
+        # Add the regression analysis box in lower right
+        ax.text(0.98, 0.02, regression_text, 
+               transform=ax.transAxes,
+               fontsize=8, 
+               verticalalignment='bottom',
+               horizontalalignment='right',
+               bbox=dict(boxstyle='round,pad=0.8', 
+                        facecolor='#FFFFF5',  # Very light yellow
+                        alpha=0.95, 
+                        edgecolor='#444444',
+                        linewidth=1.2),
+               family='monospace',  # Use monospace for better alignment
+               zorder=10)
+        
+        # Set labels and title based on duty type
+        if duty == 'thermal':
+            ax.set_xlabel('Temperature (°C)', fontsize=13, fontweight='semibold')
+            ax.set_ylabel('Thermal Strain', fontsize=13, fontweight='semibold')
+            title = f'Q{self.config.question_id} Thermal Strain-Temperature Relationship{title_suffix}'
+        elif duty == 'modulus':
+            ax.set_xlabel('Strain', fontsize=13, fontweight='semibold')
+            ax.set_ylabel('Stress (Pa)', fontsize=13, fontweight='semibold')
+            title = f'Q{self.config.question_id} Stress-Strain Relationship{title_suffix}'
+        else:
+            ax.set_xlabel('X Values', fontsize=13, fontweight='semibold')
+            ax.set_ylabel('Y Values', fontsize=13, fontweight='semibold')
+            title = f'Q{self.config.question_id} Data Relationship{title_suffix}'
+        
+        ax.set_title(title, fontsize=15, fontweight='bold', pad=20)
+        
+        # Enhance grid and appearance
+        ax.grid(True, alpha=0.25, linestyle='--', linewidth=0.5, zorder=0)
+        ax.set_axisbelow(True)
+        
+        # Style spines
+        for spine in ax.spines.values():
+            spine.set_linewidth(1.2)
+            spine.set_edgecolor('#333333')
+        
+        # Set tick parameters
+        ax.tick_params(axis='both', which='major', labelsize=11, 
+                      direction='in', length=5, width=1.2)
+        ax.tick_params(axis='both', which='minor', direction='in', 
+                      length=3, width=0.8)
+        ax.minorticks_on()
+        ax.ticklabel_format(style='sci', axis='both', scilimits=(-3, 3))
+        ax.set_facecolor('#FAFAFA')
+        plt.tight_layout(pad=1.5)
+        output_file = os.path.join(self.config.output_folder, output_name, f'{duty}_scatter_analysis_academic.png')
+        fig.savefig(output_file, dpi=600, bbox_inches='tight', 
+                   facecolor='white', edgecolor='none', pad_inches=0.15)
+        
+        plt.close(fig)
+        
+        print(f"Academic scatter plot saved: {output_file}")
+
+    def _write_data(self, pos_regressions, duty):
+        pos_regressions = [x for x in pos_regressions if 'edge' in x['category']]
+        for x in pos_regressions:
+            if duty == 'thermal':
+                self.config.Grid_stability_ther[x['category']].append(x['slope'])
+            elif duty == 'modulus':
+                self.config.Grid_stability_modu[x['category']].append(x['slope'])
+
+    def draw_stability(self, output_name: str = None):
+        """Plot grid refinement stability analysis with enhanced aesthetics"""
+        
+        # Check if there's data to plot
+        if not self.config.Grid_stability_ther and not self.config.Grid_stability_modu:
+            print("No stability data available to plot")
+            return
+        
+        # Create figure with subplots for thermal and modulus
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7), dpi=600)
+        
+        # Define color schemes based on question type
+        if self.config.question_id == 3:
+            colors = {
+                'edge_solder': '#E74C3C',       # Red
+                'edge_no_solder': '#8B0000',    # Dark red
+            }
+            markers = {
+                'edge_solder': 'o',
+                'edge_no_solder': 's',
+            }
+            linestyles = {
+                'edge_solder': '-',
+                'edge_no_solder': '-.',
+            }
+            labels = {
+                'edge_solder': 'Solder Ball Side',
+                'edge_no_solder': 'No Solder Ball Side',
+            }
+        else:
+            colors = {'edge': '#E74C3C'}
+            markers = {'edge': 'o'}
+            linestyles = {'edge': '-'}
+            labels = {'edge': 'Edge Points'}
+        
+        # Plot thermal expansion stability
+        if self.config.Grid_stability_ther:
+            for name, data in self.config.Grid_stability_ther.items():
+                if len(data) == len(self.config.grid_names):
+                    ax1.plot(self.config.grid_names, data, 
+                            color=colors.get(name, '#333333'),
+                            marker=markers.get(name, 'o'),
+                            linestyle=linestyles.get(name, '-'),
+                            label=labels.get(name, name),
+                            linewidth=2.5,
+                            markersize=10,
+                            markeredgewidth=2,
+                            markeredgecolor='white',
+                            alpha=0.9)
+                    
+                    # Add data point annotations for the last point
+                    if len(data) > 0:
+                        ax1.annotate(f'{data[-1]:.2e}', 
+                                xy=(self.config.grid_names[-1], data[-1]),
+                                xytext=(5, 5), textcoords='offset points',
+                                fontsize=7, alpha=0.7)
+            
+            # Enhance ax1 appearance
+            ax1.set_title('Thermal Expansion Coefficient Convergence', 
+                        fontsize=14, fontweight='bold', pad=15)
+            ax1.set_xlabel('Grid Size', fontsize=12, fontweight='semibold')
+            ax1.set_ylabel('CTE Slope (∂ε/∂T)', fontsize=12, fontweight='semibold')
+            ax1.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+            ax1.set_axisbelow(True)
+            
+            # Add legend
+            ax1.legend(loc='best', frameon=True, fancybox=True,
+                    shadow=True, framealpha=0.95, edgecolor='#CCCCCC',
+                    fontsize=10, title='Position', title_fontsize=11)
+            
+            # Rotate x-axis labels
+            plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45, ha='right')
+            
+            # Add minor ticks
+            ax1.minorticks_on()
+            ax1.tick_params(which='minor', length=3, width=0.5)
+            ax1.tick_params(which='major', length=5, width=1.2)
+            
+            # Style spines
+            for spine in ['top', 'right']:
+                ax1.spines[spine].set_visible(False)
+            for spine in ['left', 'bottom']:
+                ax1.spines[spine].set_linewidth(1.2)
+                ax1.spines[spine].set_color('#333333')
+            
+            # Format y-axis in scientific notation
+            ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            
+            # Add horizontal line at y=0 for reference
+            ax1.axhline(y=0, color='gray', linestyle=':', alpha=0.5, linewidth=1)
+        
+        # Plot modulus stability
+        if self.config.Grid_stability_modu:
+            for name, data in self.config.Grid_stability_modu.items():
+                if len(data) == len(self.config.grid_names):
+                    ax2.plot(self.config.grid_names, data,
+                            color=colors.get(name, '#333333'),
+                            marker=markers.get(name, 'o'),
+                            linestyle=linestyles.get(name, '-'),
+                            label=labels.get(name, name),
+                            linewidth=2.5,
+                            markersize=10,
+                            markeredgewidth=2,
+                            markeredgecolor='white',
+                            alpha=0.9)
+                    
+                    # Add data point annotations for the last point
+                    if len(data) > 0:
+                        ax2.annotate(f'{data[-1]:.2e}', 
+                                xy=(self.config.grid_names[-1], data[-1]),
+                                xytext=(5, 5), textcoords='offset points',
+                                fontsize=7, alpha=0.7)
+            
+            # Enhance ax2 appearance
+            ax2.set_title('Elastic Modulus Convergence', 
+                        fontsize=14, fontweight='bold', pad=15)
+            ax2.set_xlabel('Grid Size', fontsize=12, fontweight='semibold')
+            ax2.set_ylabel('Modulus Slope (∂σ/∂ε)', fontsize=12, fontweight='semibold')
+            ax2.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+            ax2.set_axisbelow(True)
+            
+            # Add legend
+            ax2.legend(loc='best', frameon=True, fancybox=True,
+                    shadow=True, framealpha=0.95, edgecolor='#CCCCCC',
+                    fontsize=10, title='Position', title_fontsize=11)
+            
+            # Rotate x-axis labels
+            plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha='right')
+            
+            # Add minor ticks
+            ax2.minorticks_on()
+            ax2.tick_params(which='minor', length=3, width=0.5)
+            ax2.tick_params(which='major', length=5, width=1.2)
+            
+            # Style spines
+            for spine in ['top', 'right']:
+                ax2.spines[spine].set_visible(False)
+            for spine in ['left', 'bottom']:
+                ax2.spines[spine].set_linewidth(1.2)
+                ax2.spines[spine].set_color('#333333')
+            
+            # Format y-axis in scientific notation
+            ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+            
+            # Add horizontal line at y=0 for reference
+            ax2.axhline(y=0, color='gray', linestyle=':', alpha=0.5, linewidth=1)
+        
+        # Overall title
+        fig.suptitle(f'Q{self.config.question_id} Grid Refinement Convergence Analysis',
+                    fontsize=16, fontweight='bold', y=1.02)
+        
+        # Add convergence analysis text box
+        convergence_info = self._calculate_convergence_metrics()
+        if convergence_info:
+            fig.text(0.5, -0.08, convergence_info, ha='center', fontsize=9,
+                    bbox=dict(boxstyle='round,pad=0.5', facecolor='#F0F0F0',
+                            alpha=0.9, edgecolor='#666666', linewidth=1))
+        
+        # Adjust layout
+        plt.tight_layout()
+        
+        # Save figure
+        if output_name:
+            output_file = Path(self.config.output_folder) / f'{output_name}_stability_analysis.png'
+        else:
+            output_file = Path(self.config.output_folder) / f'Q{self.config.question_id}_grid_stability_analysis.png'
+        
+        fig.savefig(output_file, dpi=600, bbox_inches='tight',
+                facecolor='white', edgecolor='none', pad_inches=0.2)
+        
+        plt.close(fig)
+        print(f"Stability analysis plot saved: {output_file}")
+        
+        # Print convergence summary
+        self._print_convergence_summary()
+
+    def _calculate_convergence_metrics(self) -> str:
+        """Calculate convergence metrics for display"""
+        metrics = []
+        
+        # Analyze thermal data
+        if self.config.Grid_stability_ther:
+            for name, data in self.config.Grid_stability_ther.items():
+                if len(data) >= 2:
+                    # Calculate relative change for last two points
+                    rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
+                    converged = "[CONVERGED]" if rel_change < 5 else "[NOT CONVERGED]"
+                    label_name = name.replace('_', ' ').title()
+                    metrics.append(f"Thermal {label_name}: {rel_change:.1f}% {converged}")
+        
+        # Analyze modulus data
+        if self.config.Grid_stability_modu:
+            for name, data in self.config.Grid_stability_modu.items():
+                if len(data) >= 2:
+                    rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
+                    converged = "[CONVERGED]" if rel_change < 5 else "[NOT CONVERGED]"
+                    label_name = name.replace('_', ' ').title()
+                    metrics.append(f"Modulus {label_name}: {rel_change:.1f}% {converged}")
+        
+        if metrics:
+            header = "Convergence Criteria: < 5% relative change between last two grids\n"
+            return header + "\n".join(metrics)
+        return ""
+
+    def _print_convergence_summary(self):
+        """Print detailed convergence summary to console"""
+        print("\n" + "="*70)
+        print(" "*25 + "CONVERGENCE SUMMARY")
+        print("="*70)
+        
+        # Thermal expansion analysis
+        if self.config.Grid_stability_ther:
+            print("\n>>> Thermal Expansion Coefficient (dε/dT):")
+            print("-"*50)
+            for name, data in self.config.Grid_stability_ther.items():
+                if len(data) > 0:
+                    label_name = name.replace('_', ' ').upper()
+                    print(f"\n  {label_name}:")
+                    print(f"    Final value: {data[-1]:.3e}")
+                    
+                    if len(data) >= 2:
+                        abs_change = data[-1] - data[-2]
+                        rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
+                        print(f"    Absolute change: {abs_change:.3e}")
+                        print(f"    Relative change: {rel_change:.2f}%")
+                        
+                        if rel_change < 5:
+                            print(f"    Status: [CONVERGED]")
+                        else:
+                            print(f"    Status: [NOT CONVERGED]")
+        
+        # Elastic modulus analysis
+        if self.config.Grid_stability_modu:
+            print("\n>>> Elastic Modulus (dσ/dε):")
+            print("-"*50)
+            for name, data in self.config.Grid_stability_modu.items():
+                if len(data) > 0:
+                    label_name = name.replace('_', ' ').upper()
+                    print(f"\n  {label_name}:")
+                    print(f"    Final value: {data[-1]:.3e}")
+                    
+                    if len(data) >= 2:
+                        abs_change = data[-1] - data[-2]
+                        rel_change = abs((data[-1] - data[-2]) / data[-2] * 100) if data[-2] != 0 else 0
+                        print(f"    Absolute change: {abs_change:.3e}")
+                        print(f"    Relative change: {rel_change:.2f}%")
+                        
+                        if rel_change < 5:
+                            print(f"    Status: [CONVERGED]")
+                        else:
+                            print(f"    Status: [NOT CONVERGED]")
+        
+        print("\n" + "="*70 + "\n")
+
+class EnhancedDataSorter:
+    """Main class that orchestrates data processing and visualization"""
+    
+    def __init__(self, question: int, base_path: str = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output"):
+        """Initialize with question number and base path"""
+        self.config = ConfigManager.get_config(question, base_path)
+        self.processor = DataProcessor(self.config)
+        self.visualizer = Visualizer(self.config)
+    
+    def update_config(self, **kwargs) -> None:
+        """Update configuration parameters"""
+        for key, value in kwargs.items():
+            if hasattr(self.config, key):
+                setattr(self.config, key, value)
+            else:
+                raise ValueError(f"Unknown configuration parameter: {key}")
+    
+    def process_directories(self, dir_names: List[str], duty: str,
+                          share_y: bool = False, scale: bool = False, step: int = 0) -> None:
+        """Process multiple directories and generate comparisons"""
+        self.visualizer.plot_multi_mesh_comparison(
+            dir_names, duty, step, share_y, scale
+        )
+    
+    def generate_excel_and_plots(self, dir_names: List[str]) -> None:
+        """Generate Excel files and plots for specified directories"""
+        for dir_name in dir_names:
+            dir_path = Path(self.config.output_folder) / dir_name
+            if not dir_path.exists():
+                print(f"Directory not found: {dir_path}")
+                continue
+            
+            # Generate Excel file
+            output_xlsx = dir_path / f'Q{self.config.question_id}_CTE_ela_analysis.xlsx'
+            print(f"Generating Excel file: {output_xlsx}")
+            self.processor.to_excel(str(dir_path), str(output_xlsx))
+            
+            # Generate plots
+            print(f"Generating visualization plots for {dir_name}...")
+            result_dict = self.processor.get_total_dataframes(str(dir_path))
+            cte_data = result_dict.get('CTE', {})
+            ela_data = result_dict.get('ela', {})
+            
+            if cte_data:
+                print("  - Creating CTE temperature comparison plots...")
+                self.visualizer.plot_temperature_comparison(cte_data, 'CTE', str(dir_path), share_y=True)
+            if ela_data:
+                print("  - Creating Elastic Modulus temperature comparison plots...")
+                self.visualizer.plot_temperature_comparison(ela_data, 'ela', str(dir_path), scale=True)
+            
+            print(f"Completed processing for {dir_name}\n")
+    
+    def run_scatter_analysis(self, dir_names: List[str], duty_type: str = 'thermal') -> None:
+        """Run scatter plot analysis for specified directories"""
+        print(f"Running scatter analysis for {duty_type} data...")
+        for dir_name in dir_names:
+            all_processing_units, all_shapes = self.processor.get_aver_scatter(dir_name, duty_type)
+            self.visualizer.plot_scatter_analysis(all_processing_units, all_shapes, duty_type, dir_name)
+        print(f"Scatter analysis completed for {duty_type}\n")
+
+def run_question_analysis(question: int, directories: List[str] = None, 
+                         base_path: str = None) -> EnhancedDataSorter:
+    if base_path is None:
+        base_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output"
+    print(f"=" * 60)
+    print(f"Starting Analysis for Question {question}")
+    print(f"=" * 60)
+    
+    sorter = EnhancedDataSorter(question, base_path)
+    sorter.generate_excel_and_plots(directories)
+    print("Generating scatter plot analyses...")
+
+    # Thermal scatter plot
+    sorter.run_scatter_analysis(directories, 'thermal')
+    # Modulus scatter plot
+    sorter.run_scatter_analysis(directories, 'modulus')
+
+    sorter.visualizer.draw_stability()
+    
+    print(f"Analysis completed for Question {question}")
+    print(f"=" * 60 + "\n")
+    
+    return sorter
+
+def analyze_q1(base_path: str = None):
+
+    print("\n" + "="*60)
+    print("QUESTION 1: BGA GRID REFINEMENT ANALYSIS")
+    print("="*60)
+    
+    directories = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1','Q1-0.5']
+    sorter = run_question_analysis(1, directories, base_path)
+    
+    return sorter
+
+def analyze_q2(base_path: str = None):
+
+    print("\n" + "="*60)
+    print("QUESTION 2: CHIP PRECISION GRID ANALYSIS")
+    print("="*60)
+    
+    directories = ['Q2-3', 'Q2-2.5', 'Q2-2', 'Q2-1.5', 'Q2-1','Q2-0.5']
+    sorter = run_question_analysis(2, directories, base_path)
+    
+    return sorter
+
+def analyze_q3(base_path: str = None):
+
+    print("\n" + "="*60)
+    print("QUESTION 3: SOLDER BALL CONFIGURATION ANALYSIS")
+    print("="*60)
+    
+    directories = ['Q3-3', 'Q3-2.5', 'Q3-2', 'Q3-1.5', 'Q3-1','Q3-0.5']
+    sorter = run_question_analysis(3, directories, base_path)
+    
+    return sorter
+
+def run_mesh_convergence_study(question: int, dir_names: List[str]) -> None:
+    print(f"\n{'='*60}")
+    print(f"MESH CONVERGENCE STUDY - QUESTION {question}")
+    print(f"{'='*60}")
+    print(f"Comparing {len(dir_names)} mesh configurations...")
+    
+    sorter = EnhancedDataSorter(question)
+
+    print("\nGenerating CTE convergence plots...")
+    sorter.process_directories(dir_names, 'CTE', share_y=True, step=0)
+    
+    print("Generating Elastic Modulus convergence plots...")
+    sorter.process_directories(dir_names, 'ela', scale=True, step=0)
+    
+    print(f"Mesh convergence study completed for Question {question}\n")
+
+def main():
+    print("\n" + "="*70)
+    print(" "*20 + "ENHANCED DATA ANALYSIS SYSTEM")
+    print(" "*15 + "Academic Publication Quality Output")
+    print("="*70)
+
+    if True: 
+        print("\n Running Basic Analysis for All Questions")
+        print("-"*50)
+        q1_sorter = analyze_q1(None, detailed=False)
+        q2_sorter = analyze_q2(None, detailed=False)
+        q3_sorter = analyze_q3(None, detailed=False)
+    
+    print("\n" + "="*70)
+    print(" "*20 + "ANALYSIS PIPELINE COMPLETED")
+    print(" "*15 + "All outputs saved to configured directories")
+    print("="*70 + "\n")
+    
+if __name__ == "__main__":
+    main()

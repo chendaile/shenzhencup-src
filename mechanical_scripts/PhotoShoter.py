@@ -1,6 +1,6 @@
 import os 
 
-system_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output\\Q3\\photos\\"
+system_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output\\Q1\\photos\\"
 def shot_heat(heat_system_id, shot_ids, path):
     heat_system = Model.Children[heat_system_id]
     heat_solution = heat_system.Solution
@@ -8,11 +8,11 @@ def shot_heat(heat_system_id, shot_ids, path):
         target = heat_solution.Children[shot_id]
         target.Activate()
 
-        Graphics.Camera.FocalPoint = Point([0.010853337799413117, -0.0043197794684404428, 0.0097874877838722597], 'm')
-        Graphics.Camera.ViewVector = Vector3D(-0.35786676134616696, 0.64196530692648701, 0.67809433401731567)
-        Graphics.Camera.UpVector = Vector3D(0.14990526079355287, 0.75626631900403485, -0.63685922112073112)
-        Graphics.Camera.SceneHeight = Quantity(0.039273547659927008, 'm')
-        Graphics.Camera.SceneWidth = Quantity(0.041633160672864156, 'm')
+        Graphics.Camera.FocalPoint = Point([0.012629139225755164, 0.0056962164435974631, -0.00081074499112088303], 'm')
+        Graphics.Camera.ViewVector = Vector3D(-0.88375763363099136, 0.28407254606849802, -0.37185377982361772)
+        Graphics.Camera.UpVector = Vector3D(0.32842939376355912, 0.94259052394059684, -0.060475098094111016)
+        Graphics.Camera.SceneHeight = Quantity(0.017943329180931288, 'm')
+        Graphics.Camera.SceneWidth = Quantity(0.030194490575319189, 'm')
         
         image_settings = Ansys.Mechanical.Graphics.GraphicsImageExportSettings()
         image_settings.CurrentGraphicsDisplay = False
@@ -29,11 +29,11 @@ def shot_mecha(mecha_system_id, shot_ids, path):
         target = mecha_solution.Children[shot_id]
         target.Activate()
         
-        Graphics.Camera.FocalPoint = Point([0.010853337799413117, -0.0043197794684404428, 0.0097874877838722597], 'm')
-        Graphics.Camera.ViewVector = Vector3D(-0.35786676134616696, 0.64196530692648701, 0.67809433401731567)
-        Graphics.Camera.UpVector = Vector3D(0.14990526079355287, 0.75626631900403485, -0.63685922112073112)
-        Graphics.Camera.SceneHeight = Quantity(0.039273547659927008, 'm')
-        Graphics.Camera.SceneWidth = Quantity(0.041633160672864156, 'm')
+        Graphics.Camera.FocalPoint = Point([0.012629139225755164, 0.0056962164435974631, -0.00081074499112088303], 'm')
+        Graphics.Camera.ViewVector = Vector3D(-0.88375763363099136, 0.28407254606849802, -0.37185377982361772)
+        Graphics.Camera.UpVector = Vector3D(0.32842939376355912, 0.94259052394059684, -0.060475098094111016)
+        Graphics.Camera.SceneHeight = Quantity(0.017943329180931288, 'm')
+        Graphics.Camera.SceneWidth = Quantity(0.030194490575319189, 'm')
         
         image_settings = Ansys.Mechanical.Graphics.GraphicsImageExportSettings()
         image_settings.CurrentGraphicsDisplay = False
@@ -44,6 +44,5 @@ def shot_mecha(mecha_system_id, shot_ids, path):
         Graphics.ExportImage(path + target.Name + ".png", GraphicsImageExportFormat.PNG, image_settings)
 
 shot_heat(9,[1],system_path)
-shot_mecha(10,[1,2,3,4,5,16],system_path)
-
+shot_mecha(10,[1,2,3,4,8,9],system_path)
 

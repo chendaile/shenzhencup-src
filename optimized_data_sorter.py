@@ -70,7 +70,9 @@ class ConfigManager:
                 'Q1-1': 'BGA 1mm Grid',
                 'Q1-2': 'BGA 2mm Grid',
                 'Q1-3': 'BGA 3mm Grid',
-                'Q1-2.5': 'BGA 2.5mm Grid'               
+                'Q1-2.5': 'BGA 2.5mm Grid',
+                'Q1-0.5': 'BGA 2.5mm Grid',
+                'Q1-1.5': 'BGA 2.5mm Grid'
             },
             path_names=[
                 'BGA Diagonal Path at 2mm Height', 
@@ -319,7 +321,7 @@ class DataProcessor:
 
         return result_list
 
-    def get_aver_scatter(self, dir_names: List[str], duty: str):
+    def get_aver_scatter(self, dir_name: str, duty: str):
         if duty not in ['thermal', 'modulus']:
             raise ValueError(f"{duty} not in ['thermal', 'modulus']")
         
@@ -332,42 +334,42 @@ class DataProcessor:
         all_processing_units = []
         all_shapes = []  # Changed from all_colors to all_shapes for academic style
         
-        for dir_name in dir_names:
-            dir_path = Path(self.config.output_folder) / dir_name        
-            result_list = self.get_total_dataframes(dir_path)
+        # for dir_name in dir_names:
+        dir_path = Path(self.config.output_folder) / dir_name        
+        result_list = self.get_total_dataframes(dir_path)
             
-            # Create processing units for each targeted duty
-            for duty_name in duty_targeted:
-                temp_data = result_list[duty_name]  # Temperature dictionary
+        # Create processing units for each targeted duty
+        for duty_name in duty_targeted:
+            temp_data = result_list[duty_name]  # Temperature dictionary
+            
+            processing_unit = []
+            shapes = []
+
+            # Get all temperature values for categorization
+            all_temps = sorted([float(temp) for temp in temp_data.keys()])
+            temp_categories = self._categorize_temperatures(all_temps)
+            
+            # Process data for each temperature
+            for temp_str, route_data in temp_data.items():
+                temp_val = float(temp_str)
+                temp_category = temp_categories[temp_val]
                 
-                processing_unit = []
-                shapes = []
+                # Get first route data
+                first_route_name = list(route_data.columns)[0]
+                route_values = route_data[first_route_name].values
                 
-                # Get all temperature values for categorization
-                all_temps = sorted([float(temp) for temp in temp_data.keys()])
-                temp_categories = self._categorize_temperatures(all_temps)
-                
-                # Process data for each temperature
-                for temp_str, route_data in temp_data.items():
-                    temp_val = float(temp_str)
-                    temp_category = temp_categories[temp_val]
+                # Store values and corresponding categories
+                route_length = len(route_values)
+                for i, value in enumerate(route_values):
+                    processing_unit.append(value)
                     
-                    # Get first route data
-                    first_route_name = list(route_data.columns)[0]
-                    route_values = route_data[first_route_name].values
-                    
-                    # Store values and corresponding categories
-                    route_length = len(route_values)
-                    for i, value in enumerate(route_values):
-                        processing_unit.append(value)
-                        
-                        # Create shape category based on temperature and position
-                        # Shape combines temperature category and position information
-                        position_category = self._categorize_position(i, route_length)
-                        shapes.append((temp_category, position_category))
-                
-                all_processing_units.append(processing_unit)
-                all_shapes.append(shapes)
+                    # Create shape category based on temperature and position
+                    # Shape combines temperature category and position information
+                    position_category = self._categorize_position(i, route_length)
+                    shapes.append((temp_category, position_category))
+            
+            all_processing_units.append(processing_unit)
+            all_shapes.append(shapes)
         
         return all_processing_units, all_shapes
     
@@ -810,7 +812,7 @@ class Visualizer:
         plt.close(fig)
 
     def plot_scatter_analysis(self, all_processing_units: List[List], all_shapes: List[List], 
-                            duty: str, output_path: str = None, title_suffix: str = "") -> None:
+                            duty: str, output_name: str = None, title_suffix: str = "") -> None:
         """Create academic-style scatter plot with shape-based categorization"""
         if len(all_processing_units) != 2 or len(all_shapes) != 2:
             raise ValueError("Expected exactly 2 processing units and 2 shape lists")
@@ -1102,6 +1104,7 @@ class Visualizer:
             for result in temp_regressions:
                 cat_name = result['category'].capitalize()
                 regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
+                
                 if result['r_squared'] > 0.7:  # Show slope for good fits
                     regression_text += f"    a = {result['slope']:.3e}\n"
         
@@ -1149,22 +1152,11 @@ class Visualizer:
                       direction='in', length=5, width=1.2)
         ax.tick_params(axis='both', which='minor', direction='in', 
                       length=3, width=0.8)
-        
-        # Enable minor ticks
         ax.minorticks_on()
-        
-        # Format numbers in scientific notation if needed
         ax.ticklabel_format(style='sci', axis='both', scilimits=(-3, 3))
-        
-        # Add subtle background gradient for professional look
         ax.set_facecolor('#FAFAFA')
-        
-        # Adjust layout with more padding to ensure legends don't get cut off
         plt.tight_layout(pad=1.5)
-        
-        # Save plot with high quality
-        output_path = output_path or self.config.output_folder
-        output_file = Path(output_path) / f'{duty}_scatter_analysis_academic.png'
+        output_file = os.path.join(self.config.output_folder, output_name, f'{duty}_scatter_analysis_academic.png')
         fig.savefig(output_file, dpi=600, bbox_inches='tight', 
                    facecolor='white', edgecolor='none', pad_inches=0.15)
         
@@ -1227,8 +1219,9 @@ class EnhancedDataSorter:
     def run_scatter_analysis(self, dir_names: List[str], duty_type: str = 'thermal') -> None:
         """Run scatter plot analysis for specified directories"""
         print(f"Running scatter analysis for {duty_type} data...")
-        all_processing_units, all_shapes = self.processor.get_aver_scatter(dir_names, duty_type)
-        self.visualizer.plot_scatter_analysis(all_processing_units, all_shapes, duty_type)
+        for dir_name in dir_names:
+            all_processing_units, all_shapes = self.processor.get_aver_scatter(dir_name, duty_type)
+            self.visualizer.plot_scatter_analysis(all_processing_units, all_shapes, duty_type, dir_name)
         print(f"Scatter analysis completed for {duty_type}\n")
 
 def run_question_analysis(question: int, directories: List[str] = None, 
@@ -1244,15 +1237,15 @@ def run_question_analysis(question: int, directories: List[str] = None,
     
     if directories:
         # Generate Excel and basic plots
-        sorter.generate_excel_and_plots(directories)
+        # sorter.generate_excel_and_plots(directories)
         
         # Generate scatter plots if requested
         if include_scatter:
             print("Generating scatter plot analyses...")
             # Thermal scatter plot
-            sorter.run_scatter_analysis(directories[:1], 'thermal')
+            sorter.run_scatter_analysis(directories, 'thermal')
             # Modulus scatter plot
-            sorter.run_scatter_analysis(directories[:1], 'modulus')
+            sorter.run_scatter_analysis(directories, 'modulus')
     
     print(f"Analysis completed for Question {question}")
     print(f"=" * 60 + "\n")
@@ -1266,7 +1259,7 @@ def analyze_q1(base_path: str = None, detailed: bool = True):
     print("QUESTION 1: BGA GRID REFINEMENT ANALYSIS")
     print("="*60)
     
-    directories = ['Q1-0.5']
+    directories = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1','Q1-0.5']
     sorter = run_question_analysis(1, directories, base_path)
     
     return sorter
@@ -1320,8 +1313,8 @@ def main():
         print("\n Running Basic Analysis for All Questions")
         print("-"*50)
         q1_sorter = analyze_q1(None, detailed=False)
-        q2_sorter = analyze_q2(None, detailed=False)
-        q3_sorter = analyze_q3(None, detailed=False)
+        # q2_sorter = analyze_q2(None, detailed=False)
+        # q3_sorter = analyze_q3(None, detailed=False)
 
     if False:  # Set to True to enable
         print("\n Running Custom Mesh Convergence Studies")

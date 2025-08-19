@@ -368,30 +368,34 @@ class DataProcessor:
         return all_processing_units, all_shapes
     
     def _categorize_temperatures(self, temps: List[float]) -> Dict[float, str]:
-        """Categorize temperatures into groups for academic visualization"""
+        """Categorize temperatures into 3 groups for academic visualization"""
         if not temps:
             return {}
         
         categories = {}
-        if len(temps) <= 3:
+        sorted_temps = sorted(temps)
+        
+        if len(sorted_temps) <= 3:
             # For small number of temps, use simple categories
-            for i, temp in enumerate(temps):
-                categories[temp] = ['low', 'medium', 'high'][min(i, 2)]
+            for i, temp in enumerate(sorted_temps):
+                if i == 0:
+                    categories[temp] = 'low'
+                elif i == len(sorted_temps) - 1:
+                    categories[temp] = 'high'
+                else:
+                    categories[temp] = 'medium'
         else:
-            # For larger number, divide into quartiles
-            q1 = np.percentile(temps, 25)
-            q2 = np.percentile(temps, 50)
-            q3 = np.percentile(temps, 75)
+            # For larger number, divide into three groups using tertiles
+            tertile1 = np.percentile(sorted_temps, 33.33)
+            tertile2 = np.percentile(sorted_temps, 66.67)
             
             for temp in temps:
-                if temp <= q1:
-                    categories[temp] = 'Q1'
-                elif temp <= q2:
-                    categories[temp] = 'Q2'
-                elif temp <= q3:
-                    categories[temp] = 'Q3'
+                if temp <= tertile1:
+                    categories[temp] = 'low'
+                elif temp <= tertile2:
+                    categories[temp] = 'medium'
                 else:
-                    categories[temp] = 'Q4'
+                    categories[temp] = 'high'
         
         return categories
     
@@ -798,11 +802,25 @@ class Visualizer:
         plt.style.use('seaborn-v0_8-whitegrid')
         fig, ax = plt.subplots(figsize=(12, 8), dpi=300)  # Increased width for better legend placement
         
-        # Define marker styles for different categories
+        # Define marker styles for different categories - simplified to 3 temperature categories
         temp_markers = {
-            'low': 'o', 'medium': 's', 'high': '^',
-            'Q1': 'o', 'Q2': 's', 'Q3': '^', 'Q4': 'D'
+            'low': 'o',      # Circle
+            'medium': 's',   # Square
+            'high': '^',     # Triangle
+            'Q1': 'o',       # Map quartiles to 3 categories
+            'Q2': 's', 
+            'Q3': 's',       # Q2 and Q3 both use square
+            'Q4': '^'
         }
+        
+        # Simplify temperature categories to just 3
+        simplified_temp_map = {
+            'Q1': 'low',
+            'Q2': 'medium',
+            'Q3': 'medium',
+            'Q4': 'high'
+        }
+        
         pos_colors = {
             'edge': '#E74C3C',       # Red for edges
             'center': '#3498DB',     # Blue for center
@@ -814,11 +832,14 @@ class Visualizer:
         from collections import defaultdict
         grouped_data = defaultdict(list)
         
+        # Simplify temperature categories and regroup data
         for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
+            # Simplify temperature category
+            if temp_cat in simplified_temp_map:
+                temp_cat = simplified_temp_map[temp_cat]
             grouped_data[(temp_cat, pos_cat)].append((x, y))
         
         # Plot each group with appropriate style
-        legend_elements = []
         plotted_temp_cats = set()
         plotted_pos_cats = set()
         
@@ -848,13 +869,19 @@ class Visualizer:
         from matplotlib.patches import Patch
         from matplotlib.lines import Line2D
         
-        # Temperature category legend elements
+        # Temperature category legend elements (simplified to 3)
         temp_legend = []
-        for cat in sorted(plotted_temp_cats):
-            temp_legend.append(Line2D([0], [0], marker=temp_markers[cat], 
-                                     color='w', markerfacecolor='gray',
-                                     markersize=9, markeredgecolor='black',
-                                     markeredgewidth=0.8, label=f'{cat.capitalize()}'))
+        temp_labels = {
+            'low': 'Low Temp.',
+            'medium': 'Med. Temp.',
+            'high': 'High Temp.'
+        }
+        for cat in ['low', 'medium', 'high']:  # Fixed order
+            if cat in plotted_temp_cats:
+                temp_legend.append(Line2D([0], [0], marker=temp_markers[cat], 
+                                         color='w', markerfacecolor='gray',
+                                         markersize=9, markeredgecolor='black',
+                                         markeredgewidth=0.8, label=temp_labels[cat]))
         
         # Position category legend elements  
         pos_legend = []
@@ -864,54 +891,39 @@ class Visualizer:
             'intermediate': 'Intermediate',
             'single': 'Single Point'
         }
-        for cat in sorted(plotted_pos_cats):
-            pos_legend.append(Patch(facecolor=pos_colors[cat], 
-                                   edgecolor='black', linewidth=0.8,
-                                   label=pos_labels.get(cat, cat.capitalize())))
+        for cat in ['edge', 'center', 'intermediate', 'single']:  # Fixed order
+            if cat in plotted_pos_cats:
+                pos_legend.append(Patch(facecolor=pos_colors[cat], 
+                                       edgecolor='black', linewidth=0.8,
+                                       label=pos_labels.get(cat, cat.capitalize())))
         
-        # Calculate data range for better legend positioning
+        # Calculate data range for better legend positioning and axis limits
         x_range = max(x_data) - min(x_data)
         y_range = max(y_data) - min(y_data)
-        x_margin = x_range * 0.05
-        y_margin = y_range * 0.05
+        x_margin = x_range * 0.15  # Increased margin to show extended regression lines
+        y_margin = y_range * 0.15
         
-        # Set axis limits with margins
-        ax.set_xlim(min(x_data) - x_margin, max(x_data) + x_margin)
-        ax.set_ylim(min(y_data) - y_margin, max(y_data) + y_margin)
+        # Set axis limits with larger margins, ensuring origin and regression lines are visible
+        x_min_limit = min(min(x_data) * 0.7, 0)  # Match regression line extent
+        x_max_limit = max(x_data) * 1.3
         
-        # Determine best corner for legends based on data distribution
-        # Check which quadrant has least data points
-        x_mid = (max(x_data) + min(x_data)) / 2
-        y_mid = (max(y_data) + min(y_data)) / 2
+        # Calculate y limits based on regression lines
+        y_values_at_limits = []
+        if 'slope_all' in locals():
+            y_values_at_limits.extend([slope_all * x_min_limit, slope_all * x_max_limit])
         
-        quadrant_counts = {'ul': 0, 'ur': 0, 'll': 0, 'lr': 0}
-        for x, y in zip(x_data, y_data):
-            if x < x_mid and y > y_mid:
-                quadrant_counts['ul'] += 1
-            elif x > x_mid and y > y_mid:
-                quadrant_counts['ur'] += 1
-            elif x < x_mid and y < y_mid:
-                quadrant_counts['ll'] += 1
-            else:
-                quadrant_counts['lr'] += 1
+        y_min_limit = min(min(y_data) - y_margin, min(y_values_at_limits) if y_values_at_limits else 0)
+        y_max_limit = max(max(y_data) + y_margin, max(y_values_at_limits) if y_values_at_limits else max(y_data))
         
-        # Find the two least populated quadrants for legend placement
-        sorted_quadrants = sorted(quadrant_counts.items(), key=lambda x: x[1])
-        first_corner = sorted_quadrants[0][0]
-        second_corner = sorted_quadrants[1][0]
+        ax.set_xlim(x_min_limit, x_max_limit)
+        ax.set_ylim(y_min_limit, y_max_limit)
         
-        # Map quadrants to legend positions
-        position_map = {
-            'ul': 'upper left',
-            'ur': 'upper right',
-            'll': 'lower left',
-            'lr': 'lower right'
-        }
-        
-        # Add temperature legend to least populated corner
+        # Add both legends in upper left corner
+        # Temperature legend
         legend1 = ax.legend(handles=temp_legend, 
-                          loc=position_map[first_corner],
-                          title='Temperature Category', 
+                          loc='upper left',
+                          bbox_to_anchor=(0.02, 0.98),
+                          title='Temperature', 
                           frameon=True,
                           fancybox=True, 
                           shadow=True, 
@@ -925,10 +937,11 @@ class Visualizer:
                           handletextpad=0.8)
         ax.add_artist(legend1)
         
-        # Add position legend to second least populated corner
+        # Position legend below temperature legend
         legend2 = ax.legend(handles=pos_legend, 
-                          loc=position_map[second_corner],
-                          title='Position Category', 
+                          loc='upper left',
+                          bbox_to_anchor=(0.02, 0.78),
+                          title='Position', 
                           frameon=True,
                           fancybox=True, 
                           shadow=True, 
@@ -941,45 +954,87 @@ class Visualizer:
                           columnspacing=1.2,
                           handletextpad=0.8)
         
-        # Perform regression analysis for each position category
-        # Always do regression, not just for modulus
+        # Perform comprehensive regression analysis with zero intercept
         from scipy import stats
+        import numpy as np
         
-        # Prepare data by position categories
+        # Function to perform regression with zero intercept
+        def zero_intercept_regression(x, y):
+            """Perform linear regression forcing intercept to 0"""
+            x = np.array(x)
+            y = np.array(y)
+            # For y = ax (no intercept), a = sum(xy) / sum(x^2)
+            slope = np.sum(x * y) / np.sum(x * x)
+            # Calculate R-squared
+            y_pred = slope * x
+            ss_res = np.sum((y - y_pred) ** 2)
+            ss_tot = np.sum((y - np.mean(y)) ** 2)
+            r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
+            # Calculate p-value (simplified)
+            n = len(x)
+            if n > 2:
+                se = np.sqrt(ss_res / (n - 1))
+                t_stat = slope / (se / np.sqrt(np.sum(x * x)))
+                from scipy.stats import t
+                p_value = 2 * (1 - t.cdf(abs(t_stat), n - 1))
+            else:
+                p_value = np.nan
+            return slope, r_squared, p_value
+        
+        # Prepare data by categories for regression
         position_data = defaultdict(list)
-        for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
-            position_data[pos_cat].append((x, y))
+        temp_data = defaultdict(list)
+        combined_data = defaultdict(list)
         
-        # Regression line styles for different position categories
-        regression_styles = {
-            'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.6, 'linewidth': 2},
-            'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.6, 'linewidth': 2},
-            'intermediate': {'color': '#95A5A6', 'linestyle': '-', 'alpha': 0.6, 'linewidth': 2},
-            'single': {'color': '#2ECC71', 'linestyle': '-', 'alpha': 0.6, 'linewidth': 2}
+        # Reorganize with simplified temperature categories
+        for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
+            # Simplify temperature category
+            if temp_cat in simplified_temp_map:
+                temp_cat = simplified_temp_map[temp_cat]
+            
+            position_data[pos_cat].append((x, y))
+            temp_data[temp_cat].append((x, y))
+            combined_data[(temp_cat, pos_cat)].append((x, y))
+        
+        # Regression line styles
+        position_styles = {
+            'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2},
+            'intermediate': {'color': '#95A5A6', 'linestyle': '-', 'alpha': 0.7, 'linewidth': 2.2}
+        }
+        
+        temp_styles = {
+            'low': {'color': '#2ECC71', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
+            'medium': {'color': '#F39C12', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2},
+            'high': {'color': '#8E44AD', 'linestyle': '--', 'alpha': 0.7, 'linewidth': 2.2}
         }
         
         # Store regression results
-        regression_results = []
+        position_regressions = []
+        temp_regressions = []
         
         # Perform regression for each position category
-        for pos_cat in ['edge', 'center', 'intermediate']:  # Skip 'single' as it might have too few points
+        for pos_cat in ['edge', 'center', 'intermediate']:
             if pos_cat not in position_data or len(position_data[pos_cat]) < 2:
                 continue
             
             cat_points = position_data[pos_cat]
             cat_x, cat_y = zip(*cat_points)
             
-            if len(set(cat_x)) < 2:  # Need at least 2 different x values for regression
+            if len(set(cat_x)) < 2:
                 continue
             
             try:
-                slope, intercept, r_value, p_value, std_err = stats.linregress(cat_x, cat_y)
+                slope, r_squared, p_value = zero_intercept_regression(cat_x, cat_y)
                 
-                # Plot regression line for this category
-                x_range = np.array([min(cat_x), max(cat_x)])
-                y_range = slope * x_range + intercept
+                # Plot regression line with extended range
+                # Extend range significantly to ensure visibility
+                x_min = min(min(cat_x) * 0.7, min(x_data) * 0.7, 0)  
+                x_max = max(max(cat_x) * 1.3, max(x_data) * 1.3)
+                x_range = np.array([x_min, x_max])
+                y_range = slope * x_range
                 
-                style = regression_styles.get(pos_cat, regression_styles['intermediate'])
+                style = position_styles.get(pos_cat, position_styles['intermediate'])
                 ax.plot(x_range, y_range, 
                        color=style['color'],
                        linestyle=style['linestyle'],
@@ -987,72 +1042,107 @@ class Visualizer:
                        linewidth=style['linewidth'],
                        zorder=4)
                 
-                # Store results for display
-                regression_results.append({
+                position_regressions.append({
                     'category': pos_cat,
                     'slope': slope,
-                    'intercept': intercept,
-                    'r_squared': r_value**2,
+                    'r_squared': r_squared,
                     'p_value': p_value,
-                    'n_points': len(cat_points),
-                    'color': style['color']
+                    'n_points': len(cat_points)
                 })
             except:
                 continue
         
-        # Also add overall regression with all data
-        if len(x_data) >= 2:
-            slope_all, intercept_all, r_value_all, p_value_all, std_err_all = stats.linregress(x_data, y_data)
+        # Perform regression for each temperature category
+        for temp_cat in ['low', 'medium', 'high']:
+            if temp_cat not in temp_data or len(temp_data[temp_cat]) < 2:
+                continue
             
-            # Plot overall regression line
-            x_line = np.array([min(x_data), max(x_data)])
-            y_line = slope_all * x_line + intercept_all
-            ax.plot(x_line, y_line, 'k--', alpha=0.7, linewidth=2.5, 
-                   zorder=3, label=f'Overall Fit (R²={r_value_all**2:.3f})')
+            cat_points = temp_data[temp_cat]
+            cat_x, cat_y = zip(*cat_points)
+            
+            if len(set(cat_x)) < 2:
+                continue
+            
+            try:
+                slope, r_squared, p_value = zero_intercept_regression(cat_x, cat_y)
+                
+                # Plot regression line with extended range
+                # Extend range significantly to ensure visibility
+                x_min = min(min(cat_x) * 0.7, min(x_data) * 0.7, 0)  
+                x_max = max(max(cat_x) * 1.3, max(x_data) * 1.3)
+                x_range = np.array([x_min, x_max])
+                y_range = slope * x_range
+                
+                style = temp_styles.get(temp_cat, temp_styles['medium'])
+                ax.plot(x_range, y_range, 
+                       color=style['color'],
+                       linestyle=style['linestyle'],
+                       alpha=style['alpha'],
+                       linewidth=style['linewidth'],
+                       zorder=4)
+                
+                temp_regressions.append({
+                    'category': temp_cat,
+                    'slope': slope,
+                    'r_squared': r_squared,
+                    'p_value': p_value,
+                    'n_points': len(cat_points)
+                })
+            except:
+                continue
         
-        # Position regression analysis box above position category legend
-        # Since position legend is at second_corner, place regression box just above it
-        regression_box_positions = {
-            'ul': (0.02, 0.75),   # if legend at upper left, place box below it
-            'ur': (0.98, 0.75),   # if legend at upper right, place box below it
-            'll': (0.02, 0.35),   # if legend at lower left, place box above it
-            'lr': (0.98, 0.35)    # if legend at lower right, place box above it
-        }
+        # Overall regression with all data (zero intercept)
+        slope_all, r_squared_all, p_value_all = zero_intercept_regression(x_data, y_data)
         
-        reg_x, reg_y = regression_box_positions[second_corner]
-        ha = 'right' if reg_x > 0.5 else 'left'
+        # Plot overall regression line with extended range
+        x_min = min(min(x_data) * 0.7, 0)  
+        x_max = max(x_data) * 1.3
+        x_line = np.array([x_min, x_max])
+        y_line = slope_all * x_line
+        ax.plot(x_line, y_line, 'k-', alpha=0.9, linewidth=3.0, 
+               zorder=3)
         
-        # Create regression summary text
-        regression_text = "Regression Analysis:\n" + "─" * 25 + "\n"
+        # Create comprehensive regression summary text in lower right
+        regression_text = "━━━ REGRESSION ANALYSIS ━━━\n"
+        regression_text += "(All fits: y = ax, b = 0)\n\n"
         
-        # Add overall regression if available
-        if len(x_data) >= 2:
-            regression_text += f"Overall: R² = {r_value_all**2:.3f}\n"
-            regression_text += f"  y = {slope_all:.2e}x + {intercept_all:.2e}\n"
-            if regression_results:
-                regression_text += "─" * 25 + "\n"
+        # Overall regression
+        regression_text += f"▶ Overall (black solid):\n"
+        regression_text += f"  R² = {r_squared_all:.3f}, n = {len(x_data)}\n"
+        regression_text += f"  y = {slope_all:.3e}x\n\n"
         
-        # Add category-specific regressions
-        for i, result in enumerate(regression_results):
-            cat_name = result['category'].capitalize()
-            if len(cat_name) > 8:
-                cat_name = cat_name[:8] + "."
-            regression_text += f"{cat_name}: R² = {result['r_squared']:.3f} (n={result['n_points']})\n"
-            if i == 0 or result['r_squared'] > 0.8:  # Show equation for first or good fits
-                regression_text += f"  y = {result['slope']:.2e}x + {result['intercept']:.2e}\n"
+        # Position-based regressions
+        if position_regressions:
+            regression_text += "▶ By Position (solid lines):\n"
+            for result in position_regressions:
+                cat_name = result['category'].capitalize()[:6]
+                regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
+                if result['r_squared'] > 0.7:  # Show slope for good fits
+                    regression_text += f"    a = {result['slope']:.3e}\n"
+            regression_text += "\n"
         
-        # Add the regression analysis box
-        ax.text(reg_x, reg_y, regression_text, 
+        # Temperature-based regressions
+        if temp_regressions:
+            regression_text += "▶ By Temperature (dashed):\n"
+            for result in temp_regressions:
+                cat_name = result['category'].capitalize()
+                regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
+                if result['r_squared'] > 0.7:  # Show slope for good fits
+                    regression_text += f"    a = {result['slope']:.3e}\n"
+        
+        # Add the regression analysis box in lower right
+        ax.text(0.98, 0.02, regression_text, 
                transform=ax.transAxes,
                fontsize=8, 
-               verticalalignment='top' if reg_y > 0.5 else 'bottom',
-               horizontalalignment=ha,
-               bbox=dict(boxstyle='round,pad=0.7', 
-                        facecolor='#FFFFF0',  # Light yellow background
+               verticalalignment='bottom',
+               horizontalalignment='right',
+               bbox=dict(boxstyle='round,pad=0.8', 
+                        facecolor='#FFFFF5',  # Very light yellow
                         alpha=0.95, 
-                        edgecolor='#666666',
-                        linewidth=1),
-               zorder=10)  # High z-order to ensure it's on top
+                        edgecolor='#444444',
+                        linewidth=1.2),
+               family='monospace',  # Use monospace for better alignment
+               zorder=10)
         
         # Set labels and title based on duty type
         if duty == 'thermal':

@@ -403,12 +403,12 @@ class Visualizer:
     
     def _setup_matplotlib(self) -> None:
         """Setup matplotlib with Chinese font support"""
-        
-        plt.rcParams.update({
-            'font.size': 7,
-            'font.family': 'simhei',
-            'axes.unicode_minus': False
-        })
+        # plt.rcParams.update({
+        #     'font.size': 7,
+        #     'font.family': 'simhei',
+        #     'axes.unicode_minus': False
+        # })
+        pass
     
     def plot_stability_results(self, results: List[List], duty: str) -> None:
         """Plot stability test results"""

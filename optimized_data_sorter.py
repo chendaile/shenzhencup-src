@@ -20,23 +20,23 @@ class QuestionConfig:
     exchange_char: Dict[str, str]
     height_strs_cte: List[str]
     height_strs_ela: List[str]
-    grid_names: List[str]  # 添加网格名称配置
+    grid_names: List[str]
     duty_names: dict = field(default_factory=lambda: {
-            'CTE': '热膨胀系数',
-            'ela': '拉伸模量',
-            'Ther': '热应变',
-            'stress': '对角线方向应力',
-            'Temp': '温度',
-            'strain': '对角线方向应变'
+            'CTE': 'Thermal Expansion Coefficient',
+            'ela': 'Elastic Modulus',
+            'Ther': 'Thermal Strain',
+            'stress': 'Diagonal Stress',
+            'Temp': 'Temperature',
+            'strain': 'Diagonal Strain'
         })
 
     @property
     def cte_title(self) -> str:
-        return f'Q{self.question_id}CTE热膨胀系数在不同高度上以及角点处竖直线路上的变化'
+        return f'Q{self.question_id} CTE Variation at Different Heights and Vertical Path at Corner Points'
     
     @property
     def ela_title(self) -> str:
-        return f'Q{self.question_id}拉伸模量在不同高度上以及角点处竖直线路上的变化'
+        return f'Q{self.question_id} Elastic Modulus Variation at Different Heights and Vertical Path at Corner Points'
 
 class ConfigManager:
     """Manages configurations for different questions"""
@@ -60,20 +60,20 @@ class ConfigManager:
         return QuestionConfig(
             question_id=1,
             output_folder=os.path.join(base_path, 'Q1'),
-            fontsize=5,
+            fontsize=7,
             yscale=(-200000, 500000),
             name_converter={
-                'Q1-1': 'BGA1mm分割',
-                'Q1-2': 'BGA2mm分割',
-                'Q1-3': 'BGA3mm分割',
-                'Q1-2.5': 'BGA2.5mm分割'               
+                'Q1-1': 'BGA 1mm Grid',
+                'Q1-2': 'BGA 2mm Grid',
+                'Q1-3': 'BGA 3mm Grid',
+                'Q1-2.5': 'BGA 2.5mm Grid'               
             },
             path_names=[
-                'BGA2mm高度处对角线线路', 
-                'BGA1.5mm高度处对角线线路',
-                'BGA1mm高度处对角线线路', 
-                'BGA0.5mm高度处对角线线路', 
-                'BGA角点处2mm至0mm竖直线路'
+                'BGA Diagonal Path at 2mm Height', 
+                'BGA Diagonal Path at 1.5mm Height',
+                'BGA Diagonal Path at 1mm Height', 
+                'BGA Diagonal Path at 0.5mm Height', 
+                'BGA Vertical Path from 2mm to 0mm at Corner'
             ],
             exchange_char={
                 'h0': '-height-2mm',
@@ -96,7 +96,7 @@ class ConfigManager:
                 'ela-Path-height-0.5mm', 
                 'ela-Path-height-2mm_to_0mm'
             ],
-            grid_names=['3mm网格', '2.5mm网格']
+            grid_names=['3mm Grid', '2.5mm Grid']
         )
     
     @staticmethod
@@ -104,19 +104,20 @@ class ConfigManager:
         return QuestionConfig(
             question_id=2,
             output_folder=os.path.join(base_path, 'Q2'),
-            fontsize=5,
+            fontsize=7,
             yscale=(-200000, 300000),
             name_converter={
-                'Q2-3': '芯片4mm精度分割',
-                'Q2-2.5': '芯片3.5mm精度分割',
-                'Q2-2': '芯片3mm精度分割'
+                'Q2-3': 'Chip 4mm Grid',
+                'Q2-2.5': 'Chip 3.5mm Grid',
+                'Q2-0.5': 'Chip 0.5mm Grid',
+                'Q2-2': 'Chip 3mm Grid'
             },
             path_names=[
-                '芯片3.57mm高度处对角线线路', 
-                '芯片2.67mm高度处对角线线路',
-                '芯片1.77mm高度处对角线线路', 
-                '芯片0.87mm高度处对角线线路', 
-                '芯片角点处3.57mm至0mm竖直线路'
+                'Chip Diagonal Path at 3.57mm Height', 
+                'Chip Diagonal Path at 2.67mm Height',
+                'Chip Diagonal Path at 1.77mm Height', 
+                'Chip Diagonal Path at 0.87mm Height', 
+                'Chip Vertical Path from 3.57mm to 0mm at Corner'
             ],
             exchange_char={
                 'h0': '-height-3.57mm',
@@ -139,9 +140,9 @@ class ConfigManager:
                 'ela-Path-height-0.87mm', 
                 'ela-Path-height-3.57mm_to_0mm'
             ],
-            grid_names=['4mm网格', '3.5mm网格', '3mm网格', '2.5mm网格', '2mm网格',
-                       '1.5mm网格', '1mm网格', '0.5mm网格', '0.2mm网格', '0.1mm网格',
-                       '0.09mm网格', '0.08mm网格', '0.07mm网格']
+            grid_names=['4mm Grid', '3.5mm Grid', '3mm Grid', '2.5mm Grid', '2mm Grid',
+                       '1.5mm Grid', '1mm Grid', '0.5mm Grid', '0.2mm Grid', '0.1mm Grid',
+                       '0.09mm Grid', '0.08mm Grid', '0.07mm Grid']
         )
     
     @staticmethod
@@ -149,27 +150,27 @@ class ConfigManager:
         return QuestionConfig(
             question_id=3,
             output_folder=os.path.join(base_path, 'Q3'),
-            fontsize=5,
+            fontsize=7,
             yscale=(-200000, 300000),
             name_converter={
-                'Q3-4': '芯片4mm精度分割',
-                'Q3-5': '芯片5mm精度分割',
-                'Q3-3': '芯片3mm精度分割',
-                'Q3-2': '芯片2mm精度分割',
-                'Q3-1.5': '芯片1.5mm精度分割',
-                'Q3-0.3': '芯片0.3mm精度分割',
-                'Q3-1': '芯片1mm精度分割',
-                'Q3-0.5': '芯片0.5mm精度分割',
-                'Q3-0.4': '芯片0.4mm精度分割',
-                'Q3-0.2': '芯片0.2mm精度分割',
-                'Q3-1.3': '芯片1.3mm精度分割'
+                'Q3-4': 'Chip 4mm Precision Grid',
+                'Q3-5': 'Chip 5mm Precision Grid',
+                'Q3-3': 'Chip 3mm Precision Grid',
+                'Q3-2': 'Chip 2mm Precision Grid',
+                'Q3-1.5': 'Chip 1.5mm Precision Grid',
+                'Q3-0.3': 'Chip 0.3mm Precision Grid',
+                'Q3-1': 'Chip 1mm Precision Grid',
+                'Q3-0.5': 'Chip 0.5mm Precision Grid',
+                'Q3-0.4': 'Chip 0.4mm Precision Grid',
+                'Q3-0.2': 'Chip 0.2mm Precision Grid',
+                'Q3-1.3': 'Chip 1.3mm Precision Grid'
             },
             path_names=[
-                '芯片1.97mm高度处对角线线路', 
-                '芯片1.5mm高度处对角线线路',
-                '芯片1.3mm高度处对角线线路', 
-                '芯片焊球角点处1.97mm至0mm竖直线路',
-                '芯片无焊球角点处1.97mm至0mm竖直线路'
+                'Chip Diagonal Path at 1.97mm Height', 
+                'Chip Diagonal Path at 1.5mm Height',
+                'Chip Diagonal Path at 1.3mm Height', 
+                'Chip Vertical Path from 1.97mm to 0mm (Solder Ball End)',
+                'Chip Vertical Path from 1.97mm to 0mm (No Solder Ball End)'
             ],
             exchange_char={
                 'h0': '-height-1.97mm',
@@ -192,10 +193,10 @@ class ConfigManager:
                 'ela-Path-height-1.97mm_to_0mm_焊球端',
                 'ela-Path-height-1.97mm_to_0mm_无焊球端'
             ],
-            grid_names=['5mm网格', '4mm网格', '3mm网格', '2mm网格', '1mm网格',
-                       '0.5mm网格', '0.4mm网格', '0.3mm网格', '0.2mm网格']
+            grid_names=['5mm Grid', '4mm Grid', '3mm Grid', '2mm Grid', '1mm Grid',
+                       '0.5mm Grid', '0.4mm Grid', '0.3mm Grid', '0.2mm Grid']
         )
-
+    
 class DataProcessor:
     """Handles data processing operations"""
     
@@ -247,7 +248,6 @@ class DataProcessor:
         
         if not data:
             return None
-        # converted_data = {key: [float(value) for value in values] for key, values in data.items()}
 
         return pd.DataFrame(data, dtype=np.float64)
     
@@ -273,18 +273,20 @@ class DataProcessor:
                 if results[duty] is None:
                     raise ValueError(f"Data for duty '{duty}' is None ")
                 
-            # Write to Excel
+            # Write to Excel with English sheet names
             try:
                 if Path(output_file).exists():
                     with pd.ExcelWriter(output_file, engine='openpyxl', 
                                     mode='a', if_sheet_exists='replace') as writer:
                         for duty_name, result in results.items():
-                            result.to_excel(writer, sheet_name=f'{duty_name}-{temp_str}摄氏度', index=False)
+                            sheet_name = f'{duty_name}-{temp_str}C'  # Changed from 摄氏度 to C
+                            result.to_excel(writer, sheet_name=sheet_name, index=False)
                 else:
                     with pd.ExcelWriter(output_file, engine='openpyxl', 
                                     mode='w') as writer:
                         for duty_name, result in results.items():
-                            result.to_excel(writer, sheet_name=f'{duty_name}-{temp_str}摄氏度', index=False)
+                            sheet_name = f'{duty_name}-{temp_str}C'  # Changed from 摄氏度 to C
+                            result.to_excel(writer, sheet_name=sheet_name, index=False)
             except Exception as e:
                 print(f"Error writing Excel file: {e}")
     
@@ -324,132 +326,227 @@ class DataProcessor:
         duty_targeted = mapping[duty]
         
         all_processing_units = []
-        all_colors = []
+        all_shapes = []  # Changed from all_colors to all_shapes for academic style
         
         for dir_name in dir_names:
             dir_path = Path(self.config.output_folder) / dir_name        
             result_list = self.get_total_dataframes(dir_path)
             
-            # 为每个targeted duty创建处理单元
+            # Create processing units for each targeted duty
             for duty_name in duty_targeted:
-                temp_data = result_list[duty_name]  # 温度字典
+                temp_data = result_list[duty_name]  # Temperature dictionary
                 
                 processing_unit = []
-                colors = []
+                shapes = []
                 
-                # 获取所有温度值用于归一化
-                all_temps = [float(temp) for temp in temp_data.keys()]
-                min_temp, max_temp = min(all_temps), max(all_temps)
-                temp_range = max_temp - min_temp if max_temp != min_temp else 1
+                # Get all temperature values for categorization
+                all_temps = sorted([float(temp) for temp in temp_data.keys()])
+                temp_categories = self._categorize_temperatures(all_temps)
                 
-                # 处理每个温度的数据
+                # Process data for each temperature
                 for temp_str, route_data in temp_data.items():
                     temp_val = float(temp_str)
+                    temp_category = temp_categories[temp_val]
                     
-                    # 获取第一条线路数据
+                    # Get first route data
                     first_route_name = list(route_data.columns)[0]
                     route_values = route_data[first_route_name].values
                     
-                    # 温度归一化 (0-1, 0=蓝色, 1=红色)
-                    temp_normalized = (temp_val - min_temp) / temp_range
-                    
-                    # 为这条线路的每个点生成颜色
+                    # Store values and corresponding categories
                     route_length = len(route_values)
                     for i, value in enumerate(route_values):
                         processing_unit.append(value)
                         
-                        # 位置归一化 (0-1, 0和1为端点=黄色, 0.5为中心=绿色)
-                        if route_length > 1:
-                            pos_normalized = i / (route_length - 1)
-                            # 计算距离中心的距离，用于黄绿色插值
-                            center_distance = abs(pos_normalized - 0.5) * 2  # 0-1之间
-                        else:
-                            center_distance = 0
-                        
-                        # 生成颜色 (RGB格式)
-                        # 红蓝分量基于温度
-                        red = temp_normalized
-                        blue = 1 - temp_normalized
-                        
-                        # 绿黄分量基于位置
-                        # 靠近端点时，增加黄色(红+绿)，减少蓝色
-                        # 靠近中心时，增加绿色
-                        green = 0.3 + 0.7 * (1 - center_distance)  # 基础绿色 + 位置调节
-                        yellow_boost = center_distance * 0.5  # 端点黄色增强
-                        
-                        # 调整颜色
-                        red = min(1.0, red + yellow_boost)
-                        green = min(1.0, green + yellow_boost)
-                        
-                        colors.append((red, green, blue))
+                        # Create shape category based on temperature and position
+                        # Shape combines temperature category and position information
+                        position_category = self._categorize_position(i, route_length)
+                        shapes.append((temp_category, position_category))
                 
                 all_processing_units.append(processing_unit)
-                all_colors.append(colors)
+                all_shapes.append(shapes)
         
-        return all_processing_units, all_colors
+        return all_processing_units, all_shapes
+    
+    def _categorize_temperatures(self, temps: List[float]) -> Dict[float, str]:
+        """Categorize temperatures into groups for academic visualization"""
+        if not temps:
+            return {}
+        
+        categories = {}
+        if len(temps) <= 3:
+            # For small number of temps, use simple categories
+            for i, temp in enumerate(temps):
+                categories[temp] = ['low', 'medium', 'high'][min(i, 2)]
+        else:
+            # For larger number, divide into quartiles
+            q1 = np.percentile(temps, 25)
+            q2 = np.percentile(temps, 50)
+            q3 = np.percentile(temps, 75)
+            
+            for temp in temps:
+                if temp <= q1:
+                    categories[temp] = 'Q1'
+                elif temp <= q2:
+                    categories[temp] = 'Q2'
+                elif temp <= q3:
+                    categories[temp] = 'Q3'
+                else:
+                    categories[temp] = 'Q4'
+        
+        return categories
+    
+    def _categorize_position(self, index: int, total_length: int) -> str:
+        """Categorize position along the path"""
+        if total_length <= 1:
+            return 'single'
+        
+        relative_pos = index / (total_length - 1)
+        
+        if relative_pos <= 0.1 or relative_pos >= 0.9:
+            return 'edge'
+        elif 0.4 <= relative_pos <= 0.6:
+            return 'center'
+        else:
+            return 'intermediate'
 
     @staticmethod
     def calculate_variance_string(data: pd.Series) -> str:
         """Calculate variance and return formatted string"""
         variance = np.var(data)
-        return f"方差: {variance:.2e}" if not np.isnan(variance) else "方差: NaN"
+        return f"Var: {variance:.2e}" if not np.isnan(variance) else "Var: NaN"
 
 class Visualizer:
-    """Handles all visualization operations"""
+    """Handles all visualization operations with enhanced aesthetics"""
     
     def __init__(self, config: QuestionConfig):
         self.config = config
         self._setup_matplotlib()
     
     def _setup_matplotlib(self) -> None:
-        """Setup matplotlib with Chinese font support"""
-        # plt.rcParams.update({
-        #     'font.size': 7,
-        #     'font.family': 'simhei',
-        #     'axes.unicode_minus': False
-        # })
-        pass
+        """Setup matplotlib with enhanced style for academic papers"""
+        import matplotlib.pyplot as plt
+        import matplotlib as mpl
+        
+        # Use seaborn-paper style as base for academic look
+        plt.style.use('seaborn-v0_8-paper')
+        
+        # Custom settings for better aesthetics
+        mpl.rcParams.update({
+            'font.size': 10,
+            'font.family': 'sans-serif',
+            'font.sans-serif': ['Arial', 'DejaVu Sans'],
+            'axes.labelsize': 11,
+            'axes.titlesize': 12,
+            'xtick.labelsize': 9,
+            'ytick.labelsize': 9,
+            'legend.fontsize': 9,
+            'figure.titlesize': 14,
+            'axes.linewidth': 1.2,
+            'axes.grid': True,
+            'grid.alpha': 0.3,
+            'grid.linestyle': '--',
+            'lines.linewidth': 1.5,
+            'lines.markersize': 6,
+            'axes.spines.top': False,
+            'axes.spines.right': False,
+            'axes.edgecolor': '#333333',
+            'axes.labelcolor': '#333333',
+            'text.color': '#333333',
+            'xtick.color': '#333333',
+            'ytick.color': '#333333',
+            'figure.facecolor': 'white',
+            'axes.facecolor': 'white',
+            'savefig.dpi': 300,
+            'savefig.bbox': 'tight',
+            'savefig.pad_inches': 0.1
+        })
     
     def plot_stability_results(self, results: List[List], duty: str) -> None:
-        """Plot stability test results"""
+        """Plot stability test results with enhanced aesthetics"""
         if duty not in ['CTE', 'ela']:
-            raise ValueError(f"{duty} not in ['CTE', 'ela'] ")
+            raise ValueError(f"{duty} not in ['CTE', 'ela']")
         
-        fig = plt.figure(dpi=800, figsize=(8, 6))
-        ax = fig.subplots(1, 1)
+        # Create figure with golden ratio proportions
+        fig, ax = plt.subplots(figsize=(10, 6.18), dpi=300)
         
         grid_names = self.config.grid_names
         
-        if self.config.question_id == 3:
-            labels = ['焊球端', '无焊球端']
-            for i, result in enumerate(results):
-                ax.plot(grid_names, result, label=labels[i])
-            ax.legend(loc='upper right', fontsize=8)
-        else:
-            for result in results:
-                ax.plot(grid_names, result)
+        # Define academic color palette
+        colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D']
+        markers = ['o', 's', '^', 'D']
         
-        fig.suptitle(f'Q{self.config.question_id}网格细分程度稳定性检验', fontsize=12)
+        if self.config.question_id == 3:
+            labels = ['Solder Ball End', 'No Solder Ball End']
+            for i, result in enumerate(results):
+                ax.plot(grid_names, result, 
+                       color=colors[i % len(colors)],
+                       marker=markers[i % len(markers)],
+                       label=labels[i],
+                       linewidth=2,
+                       markersize=8,
+                       markeredgewidth=1.5,
+                       markeredgecolor='white',
+                       alpha=0.9)
+            
+            ax.legend(loc='best', frameon=True, fancybox=True, 
+                     shadow=True, framealpha=0.95, edgecolor='#CCCCCC')
+        else:
+            for i, result in enumerate(results):
+                ax.plot(grid_names, result,
+                       color=colors[i % len(colors)],
+                       marker=markers[i % len(markers)],
+                       linewidth=2,
+                       markersize=8,
+                       markeredgewidth=1.5,
+                       markeredgecolor='white',
+                       alpha=0.9)
+        
+        # Enhanced title and labels
+        ax.set_title(f'Q{self.config.question_id} Grid Refinement Stability Test', 
+                    fontsize=14, fontweight='bold', pad=20)
         
         ylabel = self.config.duty_names[duty]
-        fig.supylabel(ylabel, fontsize=12)
-        fig.supxlabel('不同网格大小', fontsize=12)
+        ax.set_ylabel(ylabel, fontsize=12, fontweight='semibold')
+        ax.set_xlabel('Grid Size', fontsize=12, fontweight='semibold')
         
-        output_path = Path(self.config.output_folder) / f'{ylabel}不同网格细化下的最终角点结果.jpg'
-        fig.savefig(output_path)
+        # Rotate x-axis labels for better readability
+        plt.xticks(rotation=45, ha='right')
+        
+        # Add subtle grid
+        ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+        ax.set_axisbelow(True)
+        
+        # Enhance spines
+        for spine in ['left', 'bottom']:
+            ax.spines[spine].set_linewidth(1.2)
+            ax.spines[spine].set_color('#333333')
+        
+        # Add minor ticks
+        ax.minorticks_on()
+        ax.tick_params(which='minor', length=3, width=0.5)
+        ax.tick_params(which='major', length=5, width=1.2)
+        
+        plt.tight_layout()
+        
+        output_path = Path(self.config.output_folder) / f'{ylabel.replace(" ", "_")}_grid_refinement_results.png'
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close(fig)
     
     def plot_multi_mesh_comparison(self, dir_names: List[str], duty: str, step: int,
                                  share_y: bool = False, scale: bool = False) -> None:
-        """Plot comparison across different mesh sizes"""
+        """Plot comparison across different mesh sizes with enhanced aesthetics"""
         if duty not in ['CTE', 'ela']:
-            raise ValueError(f"{duty} not in ['CTE', 'ela'] ")
+            raise ValueError(f"{duty} not in ['CTE', 'ela']")
 
-        colors = cm.coolwarm(np.linspace(0, 1, len(dir_names)))
+        # Use colorblind-friendly palette
+        colors = plt.cm.get_cmap('tab10')(np.linspace(0, 0.9, len(dir_names)))
         
-        fig = plt.figure(dpi=800, figsize=(8, 6))
-        axes = fig.subplots(2, 3, sharey=share_y, sharex=True)
-        axes[1, 2].remove()
+        # Create figure with better proportions
+        fig = plt.figure(figsize=(14, 8), dpi=300)
+        
+        # Create subplots with better spacing
+        gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.25)
+        axes = [fig.add_subplot(gs[i//3, i%3]) for i in range(5)]
         
         # Process data for each directory
         processor = DataProcessor(self.config)
@@ -479,7 +576,7 @@ class Visualizer:
                     else:
                         result_data[path_name] += path_data / len(data_list)
             
-            # Plot data
+            # Plot data with enhanced style
             height_strs = (self.config.height_strs_cte if duty == 'CTE' 
                           else self.config.height_strs_ela)
             
@@ -488,7 +585,10 @@ class Visualizer:
                     continue
                     
                 path_data = result_data[height_str]
-                line, = axes.flat[i].plot(path_data, color=colors[name_id])
+                line, = axes[i].plot(path_data, 
+                                    color=colors[name_id],
+                                    linewidth=1.8,
+                                    alpha=0.85)
                 
                 if i == 0:
                     global_labels.append(self.config.name_converter.get(dir_name, dir_name))
@@ -497,11 +597,21 @@ class Visualizer:
                 local_handles[i].append(line)
                 local_labels[i].append(DataProcessor.calculate_variance_string(path_data))
                 
-                axes.flat[i].set_title(self.config.path_names[i])
-                axes.flat[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                # Enhance subplot appearance
+                axes[i].set_title(self.config.path_names[i], fontsize=10, fontweight='semibold')
+                axes[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                axes[i].grid(True, alpha=0.25, linestyle='--')
+                axes[i].set_axisbelow(True)
+                
+                # Enhance spines
+                for spine in ['top', 'right']:
+                    axes[i].spines[spine].set_visible(False)
+                for spine in ['left', 'bottom']:
+                    axes[i].spines[spine].set_linewidth(1)
+                    axes[i].spines[spine].set_color('#666666')
                 
                 if scale:
-                    axes.flat[i].set_ylim(*self.config.yscale)
+                    axes[i].set_ylim(*self.config.yscale)
             
             # Collect data for stability plot
             first_height_data = result_data.get(height_strs[0])
@@ -514,29 +624,43 @@ class Visualizer:
                         results[0].append(first_height_data.iloc[0])
                         results[1].append(first_height_data.iloc[-1])
                 else:
-                    if self.config.question_id == 1 and duty == 'ela':
-                        results[0].append(first_height_data.iloc[0])
-                    else:
-                        results[0].append(first_height_data.iloc[0])
+                    results[0].append(first_height_data.iloc[0])
         
-        # Add legends
+        # Add legends with better styling
         for i in range(5):
             if local_handles[i]:
-                axes.flat[i].legend(local_handles[i], local_labels[i], 
-                                  fontsize=self.config.fontsize, loc='lower left')
+                legend = axes[i].legend(local_handles[i], local_labels[i], 
+                                      fontsize=7, loc='best',
+                                      frameon=True, fancybox=True,
+                                      framealpha=0.9, edgecolor='#CCCCCC')
+                legend.get_frame().set_linewidth(0.5)
         
-        fig.legend(global_handles, global_labels, bbox_to_anchor=(0.9, 0.4), 
-                  fontsize=8, ncol=1)
+        # Add global legend with better positioning
+        if global_handles:
+            global_legend = fig.legend(global_handles, global_labels, 
+                                      bbox_to_anchor=(0.98, 0.5), 
+                                      loc='center left',
+                                      fontsize=9, 
+                                      frameon=True, 
+                                      fancybox=True,
+                                      shadow=True,
+                                      framealpha=0.95,
+                                      edgecolor='#CCCCCC',
+                                      title='Mesh Configuration')
+            global_legend.get_frame().set_linewidth(0.8)
         
-        # Set labels and title
-        ylabel = 'CTE热膨胀系数' if duty == 'CTE' else '拉伸模量'
+        # Set labels and title with enhanced styling
+        ylabel = self.config.duty_names[duty]
         title = (self.config.cte_title if duty == 'CTE' else self.config.ela_title)
         
-        fig.supylabel(ylabel, fontsize=12)
-        fig.suptitle(f'不同网格细化程度下,{title}', fontsize=12)
-        fig.supxlabel('节点序号', fontsize=12)
+        fig.text(0.04, 0.5, ylabel, va='center', rotation='vertical', 
+                fontsize=12, fontweight='semibold')
+        fig.suptitle(f'Grid Refinement Study: {title}', 
+                    fontsize=14, fontweight='bold', y=0.98)
+        fig.text(0.5, 0.02, 'Node Index', ha='center', 
+                fontsize=12, fontweight='semibold')
         
-        # Save figure
+        # Save figure with high quality
         output_name = f'Q{self.config.question_id}-{duty}'
         if share_y:
             output_name += '-shareY'
@@ -544,8 +668,9 @@ class Visualizer:
             output_name += '-scale'
         output_name += f'-STEP{step}'
         
-        output_path = Path(self.config.output_folder) / f'{output_name}.jpg'
-        fig.savefig(output_path)
+        output_path = Path(self.config.output_folder) / f'{output_name}.png'
+        fig.savefig(output_path, dpi=300, bbox_inches='tight', 
+                   facecolor='white', edgecolor='none')
         plt.close(fig)
         
         # Generate stability plot
@@ -556,18 +681,22 @@ class Visualizer:
 
     def plot_temperature_comparison(self, data_dict: Dict, duty: str, output_path: str,
                                    scale: bool = False, share_y: bool = False) -> None:
-        """Plot temperature comparison for given data"""
+        """Plot temperature comparison with enhanced aesthetics"""
         if duty not in ['CTE', 'ela']:
-            raise ValueError(f"{duty} not in ['CTE', 'ela'] ")
+            raise ValueError(f"{duty} not in ['CTE', 'ela']")
 
         # Sort by temperature
         sorted_data = sorted([(float(temp), temp, data) for temp, data in data_dict.items()])
         
-        colors = cm.coolwarm(np.linspace(0, 1, len(sorted_data)))
+        # Use temperature-based colormap for intuitive visualization
+        temps = [item[0] for item in sorted_data]
+        norm = plt.Normalize(vmin=min(temps), vmax=max(temps))
+        colors = plt.cm.coolwarm(norm(temps))
         
-        fig = plt.figure(figsize=(8, 6), dpi=800)
-        axes = fig.subplots(2, 3, sharex=True, sharey=share_y)
-        axes[1, 2].remove()
+        # Create figure with optimal layout
+        fig = plt.figure(figsize=(14, 8), dpi=300)
+        gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.25)
+        axes = [fig.add_subplot(gs[i//3, i%3]) for i in range(5)]
         
         height_strs = (self.config.height_strs_cte if duty == 'CTE' 
                       else self.config.height_strs_ela)
@@ -575,103 +704,386 @@ class Visualizer:
         local_handles = [[] for _ in range(5)]
         local_labels = [[] for _ in range(5)]
         
-        for j, (_, temp_str, output) in enumerate(sorted_data):
+        for j, (temp_val, temp_str, output) in enumerate(sorted_data):
             for i, height_str in enumerate(height_strs):
                 if height_str not in output.columns:
                     continue
                 
-                if i == 1:
-                    line, = axes.flat[i].plot(output[height_str], 
-                                            label=f'Temp:{temp_str}℃', 
-                                            color=colors[j])
-                else:
-                    line, = axes.flat[i].plot(output[height_str], 
-                                            color=colors[j])                    
-                axes.flat[i].set_title(self.config.path_names[i])
-                axes.flat[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                # Plot with temperature-based color
+                line, = axes[i].plot(output[height_str], 
+                                    color=colors[j],
+                                    linewidth=1.8,
+                                    alpha=0.85,
+                                    label=f'{temp_str}°C' if i == 1 else None)
+                
+                # Enhance subplot appearance
+                axes[i].set_title(self.config.path_names[i], 
+                                fontsize=10, fontweight='semibold', pad=8)
+                axes[i].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                axes[i].grid(True, alpha=0.25, linestyle='--', linewidth=0.5)
+                axes[i].set_axisbelow(True)
+                
+                # Style spines
+                for spine in ['top', 'right']:
+                    axes[i].spines[spine].set_visible(False)
+                for spine in ['left', 'bottom']:
+                    axes[i].spines[spine].set_linewidth(1)
+                    axes[i].spines[spine].set_color('#666666')
+                
+                # Add minor ticks
+                axes[i].minorticks_on()
+                axes[i].tick_params(which='minor', length=2, width=0.5)
+                axes[i].tick_params(which='major', length=4, width=1)
                 
                 local_handles[i].append(line)
                 local_labels[i].append(DataProcessor.calculate_variance_string(output[height_str]))
                 
                 if scale:
-                    axes.flat[i].set_ylim(self.config.yscale)
+                    axes[i].set_ylim(self.config.yscale)
         
-        # Add legends
+        # Add variance legends to each subplot
         for i in range(5):
             if local_handles[i]:
-                axes.flat[i].legend(local_handles[i], local_labels[i], 
-                                  fontsize=3, loc='upper right', ncol=2)
+                var_legend = axes[i].legend(local_handles[i], local_labels[i], 
+                                          fontsize=6, loc='upper right',
+                                          frameon=True, fancybox=True,
+                                          framealpha=0.9, edgecolor='#CCCCCC',
+                                          ncol=2 if len(local_handles[i]) > 4 else 1)
+                var_legend.get_frame().set_linewidth(0.5)
         
-        fig.legend(bbox_to_anchor=(0.95, 0.4), fontsize=8, ncol=2)
-        fig.supxlabel('节点序号', fontsize=12)
+        # Add temperature colorbar instead of regular legend
+        sm = plt.cm.ScalarMappable(cmap=plt.cm.coolwarm, norm=norm)
+        sm.set_array([])
+        cbar_ax = fig.add_axes([0.92, 0.35, 0.02, 0.3])
+        cbar = fig.colorbar(sm, cax=cbar_ax)
+        cbar.set_label('Temperature (°C)', fontsize=10, fontweight='semibold')
+        cbar.ax.tick_params(labelsize=8)
         
-        if duty == 'CTE':
-            fig.supylabel('CTE热膨胀系数', fontsize=12)
-            fig.suptitle(self.config.cte_title, fontsize=12)
-        else:
-            fig.supylabel('拉伸模量', fontsize=12)
-            fig.suptitle(self.config.ela_title, fontsize=12)
+        # Set main labels and title
+        fig.text(0.04, 0.5, self.config.duty_names[duty], 
+                va='center', rotation='vertical', 
+                fontsize=12, fontweight='semibold')
+        fig.text(0.5, 0.02, 'Node Index', ha='center', 
+                fontsize=12, fontweight='semibold')
         
+        title = self.config.cte_title if duty == 'CTE' else self.config.ela_title
+        fig.suptitle(f'Temperature-Dependent Analysis: {title}', 
+                    fontsize=14, fontweight='bold', y=0.98)
+        
+        # Save with high quality
         suffix = '-shareY' if share_y else ''
         suffix += '-scale' if scale else ''
-        output_file = Path(output_path) / f'{duty}{suffix}.jpg'
-        fig.savefig(output_file)
+        output_file = Path(output_path) / f'{duty}_temperature_analysis{suffix}.png'
+        fig.savefig(output_file, dpi=300, bbox_inches='tight',
+                   facecolor='white', edgecolor='none')
         
         plt.close(fig)
 
-    def plot_scatter_analysis(self, all_processing_units: List[List], all_colors: List[List], 
+    def plot_scatter_analysis(self, all_processing_units: List[List], all_shapes: List[List], 
                             duty: str, output_path: str = None, title_suffix: str = "") -> None:
-        if len(all_processing_units) != 2 or len(all_colors) != 2:
-            raise ValueError("Expected exactly 2 processing units and 2 color lists")
+        """Create academic-style scatter plot with shape-based categorization"""
+        if len(all_processing_units) != 2 or len(all_shapes) != 2:
+            raise ValueError("Expected exactly 2 processing units and 2 shape lists")
         
         # Extract data
         x_data = all_processing_units[1]  # Second list for x-axis
         y_data = all_processing_units[0]  # First list for y-axis
-        colors = all_colors[0]  # Use first color list (should be consistent)
+        shapes_data = all_shapes[0]  # Shape categories
         
         # Verify data consistency
-        if len(x_data) != len(y_data) or len(colors) != len(x_data):
+        if len(x_data) != len(y_data) or len(shapes_data) != len(x_data):
             raise ValueError("Data lengths don't match")
         
-        # Create figure with academic style
-        plt.style.use('default')
-        fig, ax = plt.subplots(figsize=(10, 8), dpi=600)
+        # Create figure with publication-quality style
+        plt.style.use('seaborn-v0_8-whitegrid')
+        fig, ax = plt.subplots(figsize=(12, 8), dpi=300)  # Increased width for better legend placement
         
-        # Create scatter plot
-        scatter = ax.scatter(x_data, y_data, c=colors, s=50, alpha=0.7, 
-                            edgecolors='black', linewidth=0.5)
+        # Define marker styles for different categories
+        temp_markers = {
+            'low': 'o', 'medium': 's', 'high': '^',
+            'Q1': 'o', 'Q2': 's', 'Q3': '^', 'Q4': 'D'
+        }
+        pos_colors = {
+            'edge': '#E74C3C',       # Red for edges
+            'center': '#3498DB',     # Blue for center
+            'intermediate': '#95A5A6', # Gray for intermediate
+            'single': '#2ECC71'      # Green for single point
+        }
         
-        # Set labels based on duty type
+        # Group data by categories for efficient plotting
+        from collections import defaultdict
+        grouped_data = defaultdict(list)
+        
+        for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
+            grouped_data[(temp_cat, pos_cat)].append((x, y))
+        
+        # Plot each group with appropriate style
+        legend_elements = []
+        plotted_temp_cats = set()
+        plotted_pos_cats = set()
+        
+        for (temp_cat, pos_cat), points in grouped_data.items():
+            if not points:
+                continue
+                
+            xs, ys = zip(*points)
+            marker = temp_markers.get(temp_cat, 'o')
+            color = pos_colors.get(pos_cat, '#95A5A6')
+            
+            # Plot with enhanced style
+            ax.scatter(xs, ys, 
+                      marker=marker,
+                      c=color,
+                      s=80,  # Slightly larger markers
+                      alpha=0.7,
+                      edgecolors='black',
+                      linewidth=0.8,
+                      zorder=5)
+            
+            # Track categories for legend
+            plotted_temp_cats.add(temp_cat)
+            plotted_pos_cats.add(pos_cat)
+        
+        # Create custom legend
+        from matplotlib.patches import Patch
+        from matplotlib.lines import Line2D
+        
+        # Temperature category legend elements
+        temp_legend = []
+        for cat in sorted(plotted_temp_cats):
+            temp_legend.append(Line2D([0], [0], marker=temp_markers[cat], 
+                                     color='w', markerfacecolor='gray',
+                                     markersize=9, markeredgecolor='black',
+                                     markeredgewidth=0.8, label=f'{cat.capitalize()}'))
+        
+        # Position category legend elements  
+        pos_legend = []
+        pos_labels = {
+            'edge': 'Edge Points',
+            'center': 'Center Points',
+            'intermediate': 'Intermediate',
+            'single': 'Single Point'
+        }
+        for cat in sorted(plotted_pos_cats):
+            pos_legend.append(Patch(facecolor=pos_colors[cat], 
+                                   edgecolor='black', linewidth=0.8,
+                                   label=pos_labels.get(cat, cat.capitalize())))
+        
+        # Calculate data range for better legend positioning
+        x_range = max(x_data) - min(x_data)
+        y_range = max(y_data) - min(y_data)
+        x_margin = x_range * 0.05
+        y_margin = y_range * 0.05
+        
+        # Set axis limits with margins
+        ax.set_xlim(min(x_data) - x_margin, max(x_data) + x_margin)
+        ax.set_ylim(min(y_data) - y_margin, max(y_data) + y_margin)
+        
+        # Determine best corner for legends based on data distribution
+        # Check which quadrant has least data points
+        x_mid = (max(x_data) + min(x_data)) / 2
+        y_mid = (max(y_data) + min(y_data)) / 2
+        
+        quadrant_counts = {'ul': 0, 'ur': 0, 'll': 0, 'lr': 0}
+        for x, y in zip(x_data, y_data):
+            if x < x_mid and y > y_mid:
+                quadrant_counts['ul'] += 1
+            elif x > x_mid and y > y_mid:
+                quadrant_counts['ur'] += 1
+            elif x < x_mid and y < y_mid:
+                quadrant_counts['ll'] += 1
+            else:
+                quadrant_counts['lr'] += 1
+        
+        # Find the two least populated quadrants for legend placement
+        sorted_quadrants = sorted(quadrant_counts.items(), key=lambda x: x[1])
+        first_corner = sorted_quadrants[0][0]
+        second_corner = sorted_quadrants[1][0]
+        
+        # Map quadrants to legend positions
+        position_map = {
+            'ul': 'upper left',
+            'ur': 'upper right',
+            'll': 'lower left',
+            'lr': 'lower right'
+        }
+        
+        # Add temperature legend to least populated corner
+        legend1 = ax.legend(handles=temp_legend, 
+                          loc=position_map[first_corner],
+                          title='Temperature Category', 
+                          frameon=True,
+                          fancybox=True, 
+                          shadow=True, 
+                          framealpha=0.95,
+                          edgecolor='#666666',
+                          facecolor='white',
+                          title_fontsize=10,
+                          fontsize=9,
+                          borderpad=1,
+                          columnspacing=1.2,
+                          handletextpad=0.8)
+        ax.add_artist(legend1)
+        
+        # Add position legend to second least populated corner
+        legend2 = ax.legend(handles=pos_legend, 
+                          loc=position_map[second_corner],
+                          title='Position Category', 
+                          frameon=True,
+                          fancybox=True, 
+                          shadow=True, 
+                          framealpha=0.95,
+                          edgecolor='#666666',
+                          facecolor='white',
+                          title_fontsize=10,
+                          fontsize=9,
+                          borderpad=1,
+                          columnspacing=1.2,
+                          handletextpad=0.8)
+        
+        # Perform regression analysis for each position category
+        # Always do regression, not just for modulus
+        from scipy import stats
+        
+        # Prepare data by position categories
+        position_data = defaultdict(list)
+        for i, (x, y, (temp_cat, pos_cat)) in enumerate(zip(x_data, y_data, shapes_data)):
+            position_data[pos_cat].append((x, y))
+        
+        # Regression line styles for different position categories
+        regression_styles = {
+            'edge': {'color': '#E74C3C', 'linestyle': '-', 'alpha': 0.6, 'linewidth': 2},
+            'center': {'color': '#3498DB', 'linestyle': '-', 'alpha': 0.6, 'linewidth': 2},
+            'intermediate': {'color': '#95A5A6', 'linestyle': '-', 'alpha': 0.6, 'linewidth': 2},
+            'single': {'color': '#2ECC71', 'linestyle': '-', 'alpha': 0.6, 'linewidth': 2}
+        }
+        
+        # Store regression results
+        regression_results = []
+        
+        # Perform regression for each position category
+        for pos_cat in ['edge', 'center', 'intermediate']:  # Skip 'single' as it might have too few points
+            if pos_cat not in position_data or len(position_data[pos_cat]) < 2:
+                continue
+            
+            cat_points = position_data[pos_cat]
+            cat_x, cat_y = zip(*cat_points)
+            
+            if len(set(cat_x)) < 2:  # Need at least 2 different x values for regression
+                continue
+            
+            try:
+                slope, intercept, r_value, p_value, std_err = stats.linregress(cat_x, cat_y)
+                
+                # Plot regression line for this category
+                x_range = np.array([min(cat_x), max(cat_x)])
+                y_range = slope * x_range + intercept
+                
+                style = regression_styles.get(pos_cat, regression_styles['intermediate'])
+                ax.plot(x_range, y_range, 
+                       color=style['color'],
+                       linestyle=style['linestyle'],
+                       alpha=style['alpha'],
+                       linewidth=style['linewidth'],
+                       zorder=4)
+                
+                # Store results for display
+                regression_results.append({
+                    'category': pos_cat,
+                    'slope': slope,
+                    'intercept': intercept,
+                    'r_squared': r_value**2,
+                    'p_value': p_value,
+                    'n_points': len(cat_points),
+                    'color': style['color']
+                })
+            except:
+                continue
+        
+        # Also add overall regression with all data
+        if len(x_data) >= 2:
+            slope_all, intercept_all, r_value_all, p_value_all, std_err_all = stats.linregress(x_data, y_data)
+            
+            # Plot overall regression line
+            x_line = np.array([min(x_data), max(x_data)])
+            y_line = slope_all * x_line + intercept_all
+            ax.plot(x_line, y_line, 'k--', alpha=0.7, linewidth=2.5, 
+                   zorder=3, label=f'Overall Fit (R²={r_value_all**2:.3f})')
+        
+        # Position regression analysis box above position category legend
+        # Since position legend is at second_corner, place regression box just above it
+        regression_box_positions = {
+            'ul': (0.02, 0.75),   # if legend at upper left, place box below it
+            'ur': (0.98, 0.75),   # if legend at upper right, place box below it
+            'll': (0.02, 0.35),   # if legend at lower left, place box above it
+            'lr': (0.98, 0.35)    # if legend at lower right, place box above it
+        }
+        
+        reg_x, reg_y = regression_box_positions[second_corner]
+        ha = 'right' if reg_x > 0.5 else 'left'
+        
+        # Create regression summary text
+        regression_text = "Regression Analysis:\n" + "─" * 25 + "\n"
+        
+        # Add overall regression if available
+        if len(x_data) >= 2:
+            regression_text += f"Overall: R² = {r_value_all**2:.3f}\n"
+            regression_text += f"  y = {slope_all:.2e}x + {intercept_all:.2e}\n"
+            if regression_results:
+                regression_text += "─" * 25 + "\n"
+        
+        # Add category-specific regressions
+        for i, result in enumerate(regression_results):
+            cat_name = result['category'].capitalize()
+            if len(cat_name) > 8:
+                cat_name = cat_name[:8] + "."
+            regression_text += f"{cat_name}: R² = {result['r_squared']:.3f} (n={result['n_points']})\n"
+            if i == 0 or result['r_squared'] > 0.8:  # Show equation for first or good fits
+                regression_text += f"  y = {result['slope']:.2e}x + {result['intercept']:.2e}\n"
+        
+        # Add the regression analysis box
+        ax.text(reg_x, reg_y, regression_text, 
+               transform=ax.transAxes,
+               fontsize=8, 
+               verticalalignment='top' if reg_y > 0.5 else 'bottom',
+               horizontalalignment=ha,
+               bbox=dict(boxstyle='round,pad=0.7', 
+                        facecolor='#FFFFF0',  # Light yellow background
+                        alpha=0.95, 
+                        edgecolor='#666666',
+                        linewidth=1),
+               zorder=10)  # High z-order to ensure it's on top
+        
+        # Set labels and title based on duty type
         if duty == 'thermal':
-            ax.set_xlabel('温度 (Temperature)', fontsize=14, fontweight='bold')
-            ax.set_ylabel('热应变 (Thermal Strain)', fontsize=14, fontweight='bold')
-            title = f'Q{self.config.question_id}热应变-温度关系图{title_suffix}'
+            ax.set_xlabel('Temperature (°C)', fontsize=13, fontweight='semibold')
+            ax.set_ylabel('Thermal Strain', fontsize=13, fontweight='semibold')
+            title = f'Q{self.config.question_id} Thermal Strain-Temperature Relationship{title_suffix}'
         elif duty == 'modulus':
-            ax.set_xlabel('应变 (Strain)', fontsize=14, fontweight='bold')
-            ax.set_ylabel('应力 (Stress)', fontsize=14, fontweight='bold')
-            title = f'Q{self.config.question_id}应力-应变关系图{title_suffix}'
+            ax.set_xlabel('Strain', fontsize=13, fontweight='semibold')
+            ax.set_ylabel('Stress (Pa)', fontsize=13, fontweight='semibold')
+            title = f'Q{self.config.question_id} Stress-Strain Relationship{title_suffix}'
         else:
-            ax.set_xlabel('X 值', fontsize=14, fontweight='bold')
-            ax.set_ylabel('Y 值', fontsize=14, fontweight='bold')
-            title = f'Q{self.config.question_id}数据关系图{title_suffix}'
+            ax.set_xlabel('X Values', fontsize=13, fontweight='semibold')
+            ax.set_ylabel('Y Values', fontsize=13, fontweight='semibold')
+            title = f'Q{self.config.question_id} Data Relationship{title_suffix}'
         
-        # Set title
-        ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
+        ax.set_title(title, fontsize=15, fontweight='bold', pad=20)
         
-        # Customize grid
-        ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+        # Enhance grid and appearance
+        ax.grid(True, alpha=0.25, linestyle='--', linewidth=0.5, zorder=0)
         ax.set_axisbelow(True)
         
-        # Customize spines
+        # Style spines
         for spine in ax.spines.values():
             spine.set_linewidth(1.2)
-            spine.set_color('black')
+            spine.set_edgecolor('#333333')
         
         # Set tick parameters
-        ax.tick_params(axis='both', which='major', labelsize=12, 
-                    direction='in', length=6, width=1.2)
+        ax.tick_params(axis='both', which='major', labelsize=11, 
+                      direction='in', length=5, width=1.2)
         ax.tick_params(axis='both', which='minor', direction='in', 
-                    length=3, width=1)
+                      length=3, width=0.8)
         
         # Enable minor ticks
         ax.minorticks_on()
@@ -679,24 +1091,21 @@ class Visualizer:
         # Format numbers in scientific notation if needed
         ax.ticklabel_format(style='sci', axis='both', scilimits=(-3, 3))
         
-        # Add color explanation text box
-        textstr = '颜色说明:\n温度: 蓝色(低) → 红色(高)\n位置: 绿色(中心) → 黄色(端点)'
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.8)
-        ax.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=10,
-                verticalalignment='top', bbox=props)
+        # Add subtle background gradient for professional look
+        ax.set_facecolor('#FAFAFA')
         
-        # Adjust layout to prevent label cutoff
-        plt.tight_layout()
+        # Adjust layout with more padding to ensure legends don't get cut off
+        plt.tight_layout(pad=1.5)
         
-        # Save plot
-        output_path = self.config.output_folder
-        output_file = Path(output_path) / f'{duty}_scatter_analysis.png'
-        fig.savefig(output_file, dpi=600, bbox_inches='tight', 
-                    facecolor='white', edgecolor='none')
+        # Save plot with high quality
+        output_path = output_path or self.config.output_folder
+        output_file = Path(output_path) / f'{duty}_scatter_analysis_academic.png'
+        fig.savefig(output_file, dpi=300, bbox_inches='tight', 
+                   facecolor='white', edgecolor='none', pad_inches=0.15)
         
         plt.close(fig)
         
-        print(f"Scatter plot saved: {output_file}")
+        print(f"Academic scatter plot saved: {output_file}")
 
 class EnhancedDataSorter:
     """Main class that orchestrates data processing and visualization"""
@@ -715,7 +1124,7 @@ class EnhancedDataSorter:
             else:
                 raise ValueError(f"Unknown configuration parameter: {key}")
     
-    def process_directories(self, duty: str, dir_names: List[str],
+    def process_directories(self, dir_names: List[str], duty: str,
                           share_y: bool = False, scale: bool = False, step: int = 0) -> None:
         """Process multiple directories and generate comparisons"""
         self.visualizer.plot_multi_mesh_comparison(
@@ -731,100 +1140,288 @@ class EnhancedDataSorter:
                 continue
             
             # Generate Excel file
-            output_xlsx = dir_path / f'Q{self.config.question_id}_CTE_ela.xlsx'
+            output_xlsx = dir_path / f'Q{self.config.question_id}_CTE_ela_analysis.xlsx'
+            print(f"Generating Excel file: {output_xlsx}")
             self.processor.to_excel(str(dir_path), str(output_xlsx))
             
             # Generate plots
-            cte_data, ela_data = [self.processor.get_total_dataframes(str(dir_path))[key] for key in ['CTE', 'ela']]
+            print(f"Generating visualization plots for {dir_name}...")
+            result_dict = self.processor.get_total_dataframes(str(dir_path))
+            cte_data = result_dict.get('CTE', {})
+            ela_data = result_dict.get('ela', {})
             
             if cte_data:
+                print("  - Creating CTE temperature comparison plots...")
                 self.visualizer.plot_temperature_comparison(cte_data, 'CTE', str(dir_path), share_y=True)
             if ela_data:
+                print("  - Creating Elastic Modulus temperature comparison plots...")
                 self.visualizer.plot_temperature_comparison(ela_data, 'ela', str(dir_path), scale=True)
+            
+            print(f"Completed processing for {dir_name}\n")
+    
+    def run_scatter_analysis(self, dir_names: List[str], duty_type: str = 'thermal') -> None:
+        """Run scatter plot analysis for specified directories"""
+        print(f"Running scatter analysis for {duty_type} data...")
+        all_processing_units, all_shapes = self.processor.get_aver_scatter(dir_names, duty_type)
+        self.visualizer.plot_scatter_analysis(all_processing_units, all_shapes, duty_type)
+        print(f"Scatter analysis completed for {duty_type}\n")
 
 # Convenience functions for backward compatibility and easy usage
 def run_question_analysis(question: int, directories: List[str] = None, 
-                         base_path: str = None) -> EnhancedDataSorter:
-    """Run analysis for a specific question"""
+                         base_path: str = None, include_scatter: bool = True) -> EnhancedDataSorter:
+    """
+    Run comprehensive analysis for a specific question
+    
+    Parameters:
+    -----------
+    question : int
+        Question number (1, 2, or 3)
+    directories : List[str]
+        List of directory names to process
+    base_path : str
+        Base path for output directory
+    include_scatter : bool
+        Whether to include scatter plot analysis
+    
+    Returns:
+    --------
+    EnhancedDataSorter : The sorter object for further processing
+    """
     if base_path is None:
         base_path = "C:\\Users\\oft\\Documents\\ShenZhenCup\\output"
     
+    print(f"=" * 60)
+    print(f"Starting Analysis for Question {question}")
+    print(f"=" * 60)
+    
     sorter = EnhancedDataSorter(question, base_path)
-    all_processing_units, all_colors = sorter.processor.get_aver_scatter(['Q2-0.5'], 'thermal')
-    sorter.visualizer.plot_scatter_analysis(all_processing_units, all_colors, 'thermal')
+    
     if directories:
+        # Generate Excel and basic plots
         sorter.generate_excel_and_plots(directories)
+        
+        # Generate scatter plots if requested
+        if include_scatter:
+            print("Generating scatter plot analyses...")
+            # Thermal scatter plot
+            sorter.run_scatter_analysis(directories[:1], 'thermal')
+            # Modulus scatter plot
+            sorter.run_scatter_analysis(directories[:1], 'modulus')
+    
+    print(f"Analysis completed for Question {question}")
+    print(f"=" * 60 + "\n")
     
     return sorter
 
-# Example usage functions
-def analyze_q1(base_path: str = None):
-    """Analyze Question 1"""
-    directories = ['Q1-3']
-    return run_question_analysis(1, directories, base_path)
+# Specific analysis functions for each question
+def analyze_q1(base_path: str = None, detailed: bool = True):
+    """
+    Analyze Question 1 with BGA grid refinement
+    
+    Parameters:
+    -----------
+    base_path : str
+        Base path for output directory
+    detailed : bool
+        Whether to include detailed analysis
+    """
+    print("\n" + "="*60)
+    print("QUESTION 1: BGA GRID REFINEMENT ANALYSIS")
+    print("="*60)
+    
+    directories = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1'] if detailed else ['Q1-3']
+    sorter = run_question_analysis(1, directories, base_path)
+    
+    if detailed:
+        print("\nRunning mesh convergence study for Q1...")
+        sorter.process_directories(directories[:2], 'CTE', share_y=True, step=1)
+        sorter.process_directories(directories[:2], 'ela', scale=True, step=1)
+    
+    return sorter
 
-def analyze_q2(base_path: str = None):
-    """Analyze Question 2"""
+def analyze_q2(base_path: str = None, detailed: bool = True):
+    """
+    Analyze Question 2 with chip precision grid
+    
+    Parameters:
+    -----------
+    base_path : str
+        Base path for output directory
+    detailed : bool
+        Whether to include detailed analysis
+    """
+    print("\n" + "="*60)
+    print("QUESTION 2: CHIP PRECISION GRID ANALYSIS")
+    print("="*60)
+    
     directories = ['Q2-0.5']
-    return run_question_analysis(2, directories, base_path)
+    sorter = run_question_analysis(2, directories, base_path)
+    
+    if detailed :
+        print("\nRunning extensive mesh convergence study for Q2...")
+        extended_dirs = ['Q2v0-4', 'Q2v0-3.5', 'Q2v0-3', 'Q2v0-2.5', 'Q2v0-2', 
+                        'Q2v0-1.5', 'Q2v0-1', 'Q2v0-0.5', 'Q2v0-0.2', 'Q2v0-0.1', 
+                        'Q2v0-0.09', 'Q2v0-0.08', 'Q2v0-0.07']
+        
+        # Check which directories exist
+        available_dirs = []
+        for dir_name in extended_dirs:
+            dir_path = Path(sorter.config.output_folder) / dir_name
+            if dir_path.exists():
+                available_dirs.append(dir_name)
+        
+        if available_dirs:
+            print(f"Found {len(available_dirs)} directories for convergence study")
+            sorter.process_directories(available_dirs[:5], 'CTE', share_y=True, step=2)
+            sorter.process_directories(available_dirs[:5], 'ela', scale=True, step=2)
+    
+    return sorter
 
-def analyze_q3(base_path: str = None):
-    """Analyze Question 3"""
-    directories = ['Q3-2']
-    return run_question_analysis(3, directories, base_path)
+def analyze_q3(base_path: str = None, detailed: bool = True):
+    """
+    Analyze Question 3 with solder ball comparison
+    
+    Parameters:
+    -----------
+    base_path : str
+        Base path for output directory
+    detailed : bool
+        Whether to include detailed analysis
+    """
+    print("\n" + "="*60)
+    print("QUESTION 3: SOLDER BALL CONFIGURATION ANALYSIS")
+    print("="*60)
+    
+    directories = ['Q3-2', 'Q3-1', 'Q3-0.5'] if detailed else ['Q3-2']
+    sorter = run_question_analysis(3, directories, base_path)
+    
+    if detailed:
+        print("\nRunning mesh convergence study for Q3 with solder ball comparison...")
+        convergence_dirs = ['Q3-5', 'Q3-4', 'Q3-3', 'Q3-2', 'Q3-1', 
+                           'Q3-0.5', 'Q3-0.4', 'Q3-0.3', 'Q3-0.2']
+        
+        # Check which directories exist
+        available_dirs = []
+        for dir_name in convergence_dirs:
+            dir_path = Path(sorter.config.output_folder) / dir_name
+            if dir_path.exists():
+                available_dirs.append(dir_name)
+        
+        if available_dirs:
+            print(f"Found {len(available_dirs)} directories for convergence study")
+            sorter.process_directories(available_dirs[:5], 'CTE', share_y=True, step=3)
+            sorter.process_directories(available_dirs[:5], 'ela', scale=True, step=3)
+    
+    return sorter
 
-def run_mesh_convergence_study(question: int, dir_names: List[str]) -> None:
-    """Run mesh convergence study for specified question and directories"""
+def run_mesh_convergence_study(question: int, dir_names: List[str], 
+                               output_suffix: str = "") -> None:
+    """
+    Run detailed mesh convergence study for specified question and directories
+    
+    Parameters:
+    -----------
+    question : int
+        Question number
+    dir_names : List[str]
+        Directory names to compare
+    output_suffix : str
+        Additional suffix for output files
+    """
+    print(f"\n{'='*60}")
+    print(f"MESH CONVERGENCE STUDY - QUESTION {question}")
+    print(f"{'='*60}")
+    print(f"Comparing {len(dir_names)} mesh configurations...")
+    
     sorter = EnhancedDataSorter(question)
     
     # Run with different visualization options
+    print("\nGenerating CTE convergence plots...")
     sorter.process_directories(dir_names, 'CTE', share_y=True, step=0)
+    
+    print("Generating Elastic Modulus convergence plots...")
     sorter.process_directories(dir_names, 'ela', scale=True, step=0)
+    
+    print(f"Mesh convergence study completed for Question {question}\n")
 
 # Main execution function
 def main():
-    """Main execution function with examples"""
+    """
+    Main execution function with comprehensive analysis pipeline
+    """
+    print("\n" + "="*70)
+    print(" "*20 + "ENHANCED DATA ANALYSIS SYSTEM")
+    print(" "*15 + "Academic Publication Quality Output")
+    print("="*70)
     
-    # Example 1: Basic analysis for each question
-    # print("Running Q1 analysis...")
-    # q1_sorter = analyze_q1()
+    # Configuration
+    base_path = None  # Use default or specify custom path
+    run_detailed = True  # Set to False for quick analysis
     
-    print("Running Q2 analysis...")
-    q2_sorter = analyze_q2()
-    
-    # print("Running Q3 analysis...")
-    # q3_sorter = analyze_q3()
-    
-    # # Example 2: Mesh convergence studies
-    # print("Running mesh convergence studies...")
-    
-    # Q1 mesh convergence
-    # q1_dirs = ['Q1-3', 'Q1-2.5']
-    # run_mesh_convergence_study(1, q1_dirs)
-    
-    # # Q2 mesh convergence
-    # q2_dirs = ['Q2v0-4', 'Q2v0-3.5', 'Q2v0-3', 'Q2v0-2.5', 'Q2v0-2', 
-    #            'Q2v0-1.5', 'Q2v0-1', 'Q2v0-0.5', 'Q2v0-0.2', 'Q2v0-0.1', 
-    #            'Q2v0-0.09', 'Q2v0-0.08', 'Q2v0-0.07']
-    # run_mesh_convergence_study(2, q2_dirs)
-    
-    # # Q3 mesh convergence
-    # q3_dirs = ['Q3-5', 'Q3-4', 'Q3-3', 'Q3-2', 'Q3-1', 
-    #            'Q3-0.5', 'Q3-0.4', 'Q3-0.3', 'Q3-0.2']
-    # run_mesh_convergence_study(3, q3_dirs)
-    
-    # # Example 3: Custom configuration
-    # print("Running custom analysis...")
-    # custom_sorter = EnhancedDataSorter(1)
-    
-    # # Update some parameters
-    # custom_sorter.update_config(
-    #     fontsize=8,
-    #     yscale=(-100000, 400000)
-    # )
-    
-    # # Run custom analysis
-    # custom_sorter.generate_excel_and_plots(['Q1-m0.3'])
+    try:
+        # Example 1: Basic analysis for each question
+        if True:  # Set to False to skip
+            print("\n[1] Running Basic Analysis for All Questions")
+            print("-"*50)
+            
+            # Uncomment the analyses you want to run
+            # q1_sorter = analyze_q1(base_path, detailed=False)
+            q2_sorter = analyze_q2(base_path, detailed=False)
+            # q3_sorter = analyze_q3(base_path, detailed=False)
+        
+        # Example 2: Detailed analysis with mesh convergence
+        if run_detailed and False:  # Set to True to enable
+            print("\n[2] Running Detailed Analysis with Mesh Convergence")
+            print("-"*50)
+            
+            # Q1 detailed analysis
+            # q1_sorter = analyze_q1(base_path, detailed=True)
+            
+            # Q2 detailed analysis
+            q2_sorter = analyze_q2(base_path, detailed=True)
+            
+            # Q3 detailed analysis
+            # q3_sorter = analyze_q3(base_path, detailed=True)
+        
+        # Example 3: Custom mesh convergence studies
+        if False:  # Set to True to enable
+            print("\n[3] Running Custom Mesh Convergence Studies")
+            print("-"*50)
+            
+            # Custom Q1 convergence
+            q1_custom_dirs = ['Q1-3', 'Q1-2.5', 'Q1-2', 'Q1-1.5', 'Q1-1']
+            # run_mesh_convergence_study(1, q1_custom_dirs)
+            
+            # Custom Q2 convergence with fine meshes
+            q2_fine_dirs = ['Q2-0.1', 'Q2-0.09', 'Q2-0.08', 'Q2-0.07', 'Q2-0.05']
+            # run_mesh_convergence_study(2, q2_fine_dirs)
+        
+        # Example 4: Custom configuration example
+        if False:  # Set to True to enable
+            print("\n[4] Running Custom Configuration Analysis")
+            print("-"*50)
+            
+            custom_sorter = EnhancedDataSorter(1, base_path)
+            
+            # Update visualization parameters
+            custom_sorter.update_config(
+                fontsize=9,
+                yscale=(-150000, 450000)
+            )
+            
+            # Run custom analysis
+            custom_sorter.generate_excel_and_plots(['Q1-m0.3'])
+        
+        print("\n" + "="*70)
+        print(" "*20 + "ANALYSIS PIPELINE COMPLETED")
+        print(" "*15 + "All outputs saved to configured directories")
+        print("="*70 + "\n")
+        
+    except Exception as e:
+        print(f"\n[ERROR] Analysis failed: {str(e)}")
+        print("Please check your data directories and configuration.")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()

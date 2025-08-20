@@ -606,6 +606,29 @@ class Visualizer:
         
         plt.close(fig)
 
+    def _forced_point_regression(self, x, y, fixed_x, fixed_y):
+        """Perform linear regression forcing through a fixed point"""
+        x = np.array(x)
+        y = np.array(y)
+        dx = x - fixed_x
+        dy = y - fixed_y
+        slope = np.sum(dx * dy) / np.sum(dx ** 2)
+        y_pred = slope * dx + fixed_y
+        # R-squared
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
+        # p-value
+        n = len(x)
+        if n > 2:
+            se = np.sqrt(ss_res / (n - 1))
+            t_stat = slope / (se / np.sqrt(np.sum(dx ** 2)))
+
+            p_value = 2 * (1 - t.cdf(abs(t_stat), n - 1))
+        else:
+            p_value = np.nan
+        return slope, r_squared, p_value
+
     def plot_scatter_analysis(self, all_processing_units: List[List], all_shapes: List[List], temp_map: dict,
                             duty: str, output_name: str = None, title_suffix: str = "") -> None:
         """Create academic-style scatter plot with shape-based categorization"""
@@ -782,30 +805,7 @@ class Visualizer:
         else:
             fixed_x = 0.0   # For modulus or others, force through (0, 0)
             fixed_y = 0.0
-        
-        def forced_point_regression(x, y, fixed_x=0.0, fixed_y=0.0):
-            """Perform linear regression forcing through a fixed point"""
-            x = np.array(x)
-            y = np.array(y)
-            dx = x - fixed_x
-            dy = y - fixed_y
-            slope = np.sum(dx * dy) / np.sum(dx ** 2)
-            y_pred = slope * dx + fixed_y
-            # R-squared
-            ss_res = np.sum((y - y_pred) ** 2)
-            ss_tot = np.sum((y - np.mean(y)) ** 2)
-            r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
-            # p-value
-            n = len(x)
-            if n > 2:
-                se = np.sqrt(ss_res / (n - 1))
-                t_stat = slope / (se / np.sqrt(np.sum(dx ** 2)))
-
-                p_value = 2 * (1 - t.cdf(abs(t_stat), n - 1))
-            else:
-                p_value = np.nan
-            return slope, r_squared, p_value
-        
+          
         # Perform regression for each position category
         if self.config.question_id == 3:
             position_categories = ['edge_solder', 'center_solder', 'intermediate_solder',
@@ -818,7 +818,7 @@ class Visualizer:
             cat_points = [point for key in grouped_data if key[1] == pos_cat for point in grouped_data[key]]
             cat_x, cat_y = zip(*cat_points)
 
-            slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
+            slope, r_squared, p_value = self._forced_point_regression(cat_x, cat_y, fixed_x, fixed_y)
         
             x_range = np.array([x_min_limit, x_max_limit])
             y_range = slope * (x_range - fixed_x) + fixed_y
@@ -846,7 +846,7 @@ class Visualizer:
             cat_points = [point for key in grouped_data if key[0] == temp_cat and 'edge' in key[1] for point in grouped_data[key]]
             cat_x, cat_y = zip(*cat_points)
 
-            slope, r_squared, p_value = forced_point_regression(cat_x, cat_y, fixed_x=fixed_x, fixed_y=fixed_y)
+            slope, r_squared, p_value = self._forced_point_regression(cat_x, cat_y, fixed_x, fixed_y)
         
             x_range = np.array([x_min_limit, x_max_limit])
             y_range = slope * (x_range - fixed_x) + fixed_y
@@ -868,7 +868,7 @@ class Visualizer:
             })
 
         # Overall regression with all data (duty-dependent fixed point)
-        slope_all, r_squared_all, p_value_all = forced_point_regression(x_data, y_data, fixed_x=fixed_x, fixed_y=fixed_y)
+        slope_all, r_squared_all, p_value_all = self._forced_point_regression(x_data, y_data, fixed_x, fixed_y)
         x_line = np.array([x_min_limit, x_max_limit])
         y_line = slope_all * (x_line - fixed_x) + fixed_y
         ax.plot(x_line, y_line, 'k-', alpha=0.9, linewidth=3.0, 
@@ -885,7 +885,7 @@ class Visualizer:
         
         # Position-based regressions
         if position_regressions:
-            regression_text += "▶ Average temp By Position(solid lines):\n"
+            regression_text += "▶ By Position(solid lines):\n"
             for result in position_regressions:
                 cat_name = result['category'].capitalize()
                 regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
@@ -1287,7 +1287,7 @@ def run_question_analysis(question: int, directories: List[str] = None) -> Enhan
     print(f"=" * 60)
     
     sorter = EnhancedDataSorter(question, base_path)
-    sorter.generate_excel_and_plots(directories)
+    # sorter.generate_excel_and_plots(directories)
     print("Generating scatter plot analyses...")
 
     # Thermal scatter plot
@@ -1295,7 +1295,7 @@ def run_question_analysis(question: int, directories: List[str] = None) -> Enhan
     # Modulus scatter plot
     sorter.run_scatter_analysis(directories, 'modulus')
 
-    sorter.visualizer.draw_stability()
+    # sorter.visualizer.draw_stability()
     
     print(f"Analysis completed for Question {question}")
     print(f"=" * 60 + "\n")

@@ -840,32 +840,86 @@ class Visualizer:
             })
         self._write_data(position_regressions, duty)
 
-        # Perform regression for each temperature category
+        temp_solder_regressions = []
         temp_regressions = []
-        for temp_cat in ['low', 'medium', 'high']:
-            cat_points = [point for key in grouped_data if key[0] == temp_cat and 'edge' in key[1] for point in grouped_data[key]]
-            cat_x, cat_y = zip(*cat_points)
+        temp_no_solder_regressions = []
+        if self.config.question_id != 3:
+            # Perform regression for each temperature category
+            for temp_cat in ['low', 'medium', 'high']:
+                cat_points = [point for key in grouped_data if key[0] == temp_cat and 'edge' in key[1] for point in grouped_data[key]]
+                cat_x, cat_y = zip(*cat_points)
 
-            slope, r_squared, p_value = self._forced_point_regression(cat_x, cat_y, fixed_x, fixed_y)
-        
-            x_range = np.array([x_min_limit, x_max_limit])
-            y_range = slope * (x_range - fixed_x) + fixed_y
+                slope, r_squared, p_value = self._forced_point_regression(cat_x, cat_y, fixed_x, fixed_y)
             
-            style = temp_styles[temp_cat]
-            ax.plot(x_range, y_range, 
-                    color=style['color'],
-                    linestyle=style['linestyle'],
-                    alpha=style['alpha'],
-                    linewidth=style['linewidth'],
-                    zorder=4)
+                x_range = np.array([x_min_limit, x_max_limit])
+                y_range = slope * (x_range - fixed_x) + fixed_y
+                
+                style = temp_styles[temp_cat]
+                ax.plot(x_range, y_range, 
+                        color=style['color'],
+                        linestyle=style['linestyle'],
+                        alpha=style['alpha'],
+                        linewidth=style['linewidth'],
+                        zorder=4)
+                
+                temp_regressions.append({
+                    'category': temp_map[temp_cat],
+                    'slope': slope,
+                    'r_squared': r_squared,
+                    'p_value': p_value,
+                    'n_points': len(cat_points)
+                })
+        else:
+            # Perform regression for each temperature category
+            for temp_cat in ['low', 'medium', 'high']:
+                cat_points = [point for key in grouped_data if key[0] == temp_cat and key[1]=='edge_solder' for point in grouped_data[key]]
+                cat_x, cat_y = zip(*cat_points)
+
+                slope, r_squared, p_value = self._forced_point_regression(cat_x, cat_y, fixed_x, fixed_y)
             
-            temp_regressions.append({
-                'category': temp_map[temp_cat],
-                'slope': slope,
-                'r_squared': r_squared,
-                'p_value': p_value,
-                'n_points': len(cat_points)
-            })
+                x_range = np.array([x_min_limit, x_max_limit])
+                y_range = slope * (x_range - fixed_x) + fixed_y
+                
+                style = temp_styles[temp_cat]
+                ax.plot(x_range, y_range, 
+                        color=style['color'],
+                        linestyle=style['linestyle'],
+                        alpha=style['alpha'],
+                        linewidth=style['linewidth'],
+                        zorder=4)
+                
+                temp_solder_regressions.append({
+                    'category': temp_map[temp_cat],
+                    'slope': slope,
+                    'r_squared': r_squared,
+                    'p_value': p_value,
+                    'n_points': len(cat_points)
+                })
+
+            for temp_cat in ['low', 'medium', 'high']:
+                cat_points = [point for key in grouped_data if key[0] == temp_cat and key[1]=='edge_no_solder' for point in grouped_data[key]]
+                cat_x, cat_y = zip(*cat_points)
+
+                slope, r_squared, p_value = self._forced_point_regression(cat_x, cat_y, fixed_x, fixed_y)
+            
+                x_range = np.array([x_min_limit, x_max_limit])
+                y_range = slope * (x_range - fixed_x) + fixed_y
+                
+                style = temp_styles[temp_cat]
+                ax.plot(x_range, y_range, 
+                        color=style['color'],
+                        linestyle=style['linestyle'],
+                        alpha=style['alpha'],
+                        linewidth=style['linewidth'],
+                        zorder=4)
+                
+                temp_no_solder_regressions.append({
+                    'category': temp_map[temp_cat],
+                    'slope': slope,
+                    'r_squared': r_squared,
+                    'p_value': p_value,
+                    'n_points': len(cat_points)
+                })
 
         # Overall regression with all data (duty-dependent fixed point)
         slope_all, r_squared_all, p_value_all = self._forced_point_regression(x_data, y_data, fixed_x, fixed_y)
@@ -897,6 +951,22 @@ class Visualizer:
         if temp_regressions:
             regression_text += "▶ By Temperature in edge(dashed):\n"
             for result in temp_regressions:
+                cat_name = result['category'].capitalize()
+                regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
+                if result['r_squared'] > 0.7:  # Show slope for good fits
+                    regression_text += f"    a = {result['slope']:.3e}\n"
+
+        if temp_solder_regressions:
+            regression_text += "▶ By Temperature in solder edge(dashed):\n"
+            for result in temp_solder_regressions:
+                cat_name = result['category'].capitalize()
+                regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
+                if result['r_squared'] > 0.7:  # Show slope for good fits
+                    regression_text += f"    a = {result['slope']:.3e}\n"
+
+        if temp_no_solder_regressions:
+            regression_text += "▶ By Temperature in no solder edge(dashed):\n"
+            for result in temp_no_solder_regressions:
                 cat_name = result['category'].capitalize()
                 regression_text += f"  {cat_name}: R² = {result['r_squared']:.3f}, n = {result['n_points']}\n"
                 if result['r_squared'] > 0.7:  # Show slope for good fits
